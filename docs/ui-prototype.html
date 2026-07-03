@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>TURBODOS — UI style prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════════════════════════════
+   TURBODOS design-system prototype — NOT wired to the app.
+   Goal: judge the art style (frames, bevels, glow, type) per component.
+   ══════════════════════════════════════════════════════════════════ */
+:root {
+  --bg:            #060a12;
+  --panel:         #0d1322;
+  --panel-2:       #111a2e;
+  --metal-hi:      #3b4763;
+  --metal:         #232c44;
+  --metal-lo:      #10141f;
+  --line:          #1c2438;
+  --cyan:          #37d6ff;
+  --amber:         #ffb347;
+  --red:           #ff4a3d;
+  --magenta:       #c85cff;
+  --green:         #6dff5c;
+  --green-dim:     #2d5c22;
+  --text:          #c8d4ee;
+  --text-dim:      #6b7794;
+  --font-pixel: 'Press Start 2P', monospace;
+  --font-term:  'VT323', monospace;
+
+  /* Reusable grunge noise (SVG turbulence → sparse dark speckle) */
+  --noise: url('data:image/svg+xml;utf8,\
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320">\
+<filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.7" numOctaves="1" stitchTiles="stitch"/>\
+<feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.22 0"/></filter>\
+<rect width="320" height="320" filter="url(%23n)"/></svg>');
+
+  /* Riveted 9-slice frame (SVG data URI). Edit the SVG below to restyle EVERY frame. */
+  --frame: url('data:image/svg+xml;utf8,\
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" shape-rendering="crispEdges">\
+<rect x="0" y="0" width="48" height="48" fill="%23060a12"/>\
+<rect x="1" y="1" width="46" height="46" fill="%233b4763"/>\
+<rect x="2" y="2" width="44" height="44" fill="%23232c44"/>\
+<rect x="5" y="5" width="38" height="38" fill="%23161c2e"/>\
+<rect x="10" y="10" width="28" height="28" fill="%230b0f1c"/>\
+<rect x="11" y="11" width="26" height="26" fill="%23060a12"/>\
+<!-- corner gusset plates -->\
+<rect x="1" y="1" width="13" height="13" fill="%232b3550"/>\
+<rect x="34" y="1" width="13" height="13" fill="%232b3550"/>\
+<rect x="1" y="34" width="13" height="13" fill="%232b3550"/>\
+<rect x="34" y="34" width="13" height="13" fill="%232b3550"/>\
+<rect x="1" y="1" width="13" height="1" fill="%234d5b80"/>\
+<rect x="1" y="1" width="1" height="13" fill="%234d5b80"/>\
+<rect x="34" y="1" width="13" height="1" fill="%234d5b80"/>\
+<rect x="46" y="1" width="1" height="13" fill="%23141a2b"/>\
+<rect x="1" y="46" width="13" height="1" fill="%23141a2b"/>\
+<rect x="34" y="46" width="13" height="1" fill="%23141a2b"/>\
+<!-- rivets: base / highlight / shadow -->\
+<g>\
+<rect x="5" y="5" width="4" height="4" fill="%237e8fb8"/><rect x="5" y="5" width="2" height="2" fill="%23cdd8f0"/><rect x="8" y="8" width="1" height="1" fill="%23060a12"/>\
+<rect x="39" y="5" width="4" height="4" fill="%237e8fb8"/><rect x="39" y="5" width="2" height="2" fill="%23cdd8f0"/><rect x="42" y="8" width="1" height="1" fill="%23060a12"/>\
+<rect x="5" y="39" width="4" height="4" fill="%237e8fb8"/><rect x="5" y="39" width="2" height="2" fill="%23cdd8f0"/><rect x="8" y="42" width="1" height="1" fill="%23060a12"/>\
+<rect x="39" y="39" width="4" height="4" fill="%237e8fb8"/><rect x="39" y="39" width="2" height="2" fill="%23cdd8f0"/><rect x="42" y="42" width="1" height="1" fill="%23060a12"/>\
+<rect x="22" y="3" width="3" height="3" fill="%23596888"/><rect x="22" y="3" width="1" height="1" fill="%23aab8d8"/>\
+<rect x="22" y="42" width="3" height="3" fill="%23596888"/><rect x="22" y="42" width="1" height="1" fill="%23aab8d8"/>\
+<rect x="3" y="22" width="3" height="3" fill="%23596888"/><rect x="3" y="22" width="1" height="1" fill="%23aab8d8"/>\
+<rect x="42" y="22" width="3" height="3" fill="%23596888"/><rect x="42" y="22" width="1" height="1" fill="%23aab8d8"/>\
+</g>\
+<!-- worn highlight lines: subtle breaks in the clean edges (stays in the tile) -->\
+<g fill="%23232c44">\
+<rect x="6" y="1" width="2" height="1"/><rect x="37" y="1" width="3" height="1"/>\
+<rect x="1" y="8" width="1" height="2"/><rect x="1" y="38" width="1" height="3"/>\
+</g>\
+<rect x="41" y="41" width="1" height="1" fill="%23815c38"/>\
+</svg>');
+
+  /* Chip mask for the logo: white = keep, black specks = pixels knocked out.
+     Sparse and irregular — reads as chipped paint on cast letters. */
+  --chips: url('data:image/svg+xml;utf8,\
+<svg xmlns="http://www.w3.org/2000/svg" width="220" height="220" shape-rendering="crispEdges">\
+<rect width="220" height="220" fill="white"/>\
+<g fill="black">\
+<rect x="23" y="11" width="2" height="1"/><rect x="61" y="34" width="1" height="2"/>\
+<rect x="138" y="8" width="3" height="1"/><rect x="139" y="9" width="1" height="1"/>\
+<rect x="187" y="27" width="1" height="1"/><rect x="99" y="19" width="2" height="2"/>\
+<rect x="44" y="26" width="1" height="1"/><rect x="163" y="15" width="1" height="2"/>\
+<rect x="12" y="31" width="1" height="1"/><rect x="204" y="9" width="2" height="1"/>\
+</g>\
+</svg>');
+
+  /* Wear decal: ONE large sheet of irregular damage laid over each panel —
+     not tiled, stretched to the panel, so marks never repeat rhythmically and
+     every panel (different size = different stretch) wears differently. */
+  --wear: url('data:image/svg+xml;utf8,\
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="480" shape-rendering="crispEdges">\
+<!-- long scratches, angled by pixel-stepping -->\
+<g fill="%235d6c92" opacity="0.42">\
+<rect x="37" y="6" width="9" height="1"/><rect x="46" y="7" width="5" height="1"/>\
+<rect x="411" y="466" width="12" height="1"/><rect x="405" y="465" width="6" height="1"/>\
+<rect x="474" y="88" width="1" height="14"/>\
+<rect x="5" y="317" width="1" height="9"/><rect x="6" y="326" width="1" height="4"/>\
+<rect x="196" y="473" width="7" height="1"/>\
+</g>\
+<!-- gouges / dents -->\
+<g fill="%23060a12" opacity="0.5">\
+<rect x="118" y="4" width="4" height="2"/><rect x="333" y="7" width="2" height="1"/>\
+<rect x="472" y="214" width="3" height="3"/><rect x="3" y="128" width="2" height="2"/>\
+<rect x="257" y="474" width="5" height="1"/><rect x="61" y="470" width="2" height="2"/>\
+<rect x="474" y="391" width="2" height="4"/>\
+</g>\
+<!-- grime / rust staining, clustered not spread -->\
+<g fill="%23514637" opacity="0.5">\
+<rect x="443" y="6" width="6" height="2"/><rect x="447" y="8" width="3" height="2"/><rect x="445" y="4" width="2" height="2"/>\
+<rect x="9" y="443" width="2" height="6"/><rect x="7" y="447" width="2" height="4"/>\
+<rect x="238" y="3" width="3" height="1"/>\
+<rect x="474" y="300" width="3" height="2"/><rect x="473" y="302" width="2" height="2"/>\
+</g>\
+<!-- one big worn patch, off-center -->\
+<g fill="%23000000" opacity="0.14">\
+<rect x="290" y="330" width="90" height="60"/><rect x="270" y="345" width="30" height="30"/>\
+<rect x="360" y="315" width="40" height="25"/>\
+</g>\
+</svg>');
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: var(--font-term); font-size: 20px; }
+body { padding: 28px; position: relative; min-height: 100vh; }
+
+/* Ambient grime: faint noise + soft vignette — always on, very quiet */
+body::before {
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 998;
+  background-image: var(--noise);
+  opacity: .5;
+}
+body::after {
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 999;
+  background: radial-gradient(ellipse at center, transparent 62%, rgba(0,0,0,0.30) 100%);
+}
+/* CRT mode: OFF by default — toggled via body.crt. Subtle: soft-edged scanlines
+   at low contrast + a whisper of RGB aperture grille. */
+body.crt::after {
+  background:
+    repeating-linear-gradient(0deg,
+      rgba(0,0,0,0.10) 0px, rgba(0,0,0,0.04) 1px, rgba(0,0,0,0) 2px, rgba(0,0,0,0) 4px),
+    repeating-linear-gradient(90deg,
+      rgba(255,60,60,0.016) 0 1px, rgba(60,255,120,0.012) 1px 2px, rgba(60,120,255,0.016) 2px 3px),
+    radial-gradient(ellipse at center, transparent 58%, rgba(0,0,0,0.34) 100%);
+}
+
+/* ── Framed panel: the core building block ─────────────────────── */
+.frame {
+  position: relative;
+  border: 14px solid transparent;
+  border-image: var(--frame) 14 round;
+  background-color: var(--panel);
+  background-image: var(--noise);   /* grime on the panel surface */
+  background-clip: padding-box;
+}
+/* Irregular wear decal stretched over the whole panel incl. its frame.
+   Non-repeating: marks land differently on every panel size. */
+.frame::after {
+  content: ''; position: absolute; inset: -14px; pointer-events: none;
+  background-image: var(--wear);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  opacity: .8;
+}
+.frame-title {
+  font-family: var(--font-pixel); font-size: 11px; letter-spacing: 1px;
+  color: var(--cyan); text-shadow: 0 0 6px rgba(55,214,255,.55);
+  padding: 10px 12px 8px; border-bottom: 2px solid var(--line);
+  text-transform: uppercase;
+}
+
+/* ── Title plate ───────────────────────────────────────────────── */
+.logo-plate { display:inline-flex; align-items:center; gap:20px; padding: 14px 22px; }
+.logo {
+  font-family: var(--font-pixel); font-size: 34px; line-height: 1;
+  letter-spacing: 2px;
+}
+/* Logo words: single object, not stacked copies.
+   - Bevel highlight lives INSIDE the gradient (shine band near the top).
+   - The 3D side is a chain of 1px drop-shadow steps, each darker — a
+     connected extruded side wall, not a detached shadow copy.
+   - Wear = a mask that chips actual pixels OUT of the letters (and their
+     sides), instead of grey noise laid over the face.                    */
+.logo .word {
+  display: inline-block;
+  -webkit-text-stroke: 1px rgba(4,6,12,.85);
+  background-image: var(--grad);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  mask-image: var(--chips); mask-mode: luminance; mask-size: 220px;
+}
+.logo .turbo {
+  --grad: linear-gradient(180deg,
+    #fff3b0 0%, #ffd24a 16%, #ffa034 42%, #ff5a2c 68%, #c72e1c 88%, #7e1a10 100%);
+  filter:
+    drop-shadow(1px 1px 0 #8a2d14) drop-shadow(1px 1px 0 #63200e)
+    drop-shadow(1px 1px 0 #431508) drop-shadow(1px 2px 0 #250b05)
+    drop-shadow(0 0 10px rgba(255,110,60,.25));
+}
+.logo .dos {
+  --grad: linear-gradient(180deg,
+    #e6f7ff 0%, #8fdcff 16%, #3fb0ff 45%, #2a6bff 72%, #1c3fb0 88%, #101f5c 100%);
+  filter:
+    drop-shadow(1px 1px 0 #1a3f75) drop-shadow(1px 1px 0 #122c56)
+    drop-shadow(1px 1px 0 #0b1c3a) drop-shadow(1px 2px 0 #050e20)
+    drop-shadow(0 0 10px rgba(70,150,255,.25));
+}
+/* MHz turbo readout */
+.mhz {
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+  background:#04070c; border:2px solid #1a2438; padding:8px 12px;
+  box-shadow: inset 0 0 12px rgba(0,0,0,.9);
+}
+.mhz .num { font-family: var(--font-pixel); font-size: 18px; color: var(--green); text-shadow: 0 0 8px rgba(109,255,92,.7); }
+.mhz .lbl { font-family: var(--font-pixel); font-size: 7px;  color: var(--green-dim); letter-spacing:1px; }
+.turbo-led { width:8px; height:8px; background:var(--green); box-shadow:0 0 8px var(--green); display:inline-block; margin-right:6px; }
+
+/* ── Buttons ───────────────────────────────────────────────────── */
+.btn {
+  font-family: var(--font-pixel); font-size: 10px; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--text); background: var(--metal);
+  border: 2px solid var(--metal-lo); padding: 12px 18px 10px; cursor: pointer;
+  box-shadow: inset 2px 2px 0 var(--metal-hi), inset -2px -2px 0 var(--metal-lo), 0 3px 0 #04060c;
+}
+.btn:hover { color: var(--cyan); text-shadow: 0 0 6px rgba(55,214,255,.6); }
+.btn:active { transform: translateY(2px); box-shadow: inset 2px 2px 0 var(--metal-lo), inset -2px -2px 0 var(--metal-hi), 0 1px 0 #04060c; }
+.btn.primary {
+  background: #0e2210; color: var(--green); border-color: var(--green-dim);
+  box-shadow: inset 2px 2px 0 #2f6b24, inset -2px -2px 0 #071408, 0 3px 0 #04060c, 0 0 18px rgba(109,255,92,.22);
+  text-shadow: 0 0 8px rgba(109,255,92,.8); font-size: 14px; padding: 16px 44px 14px;
+}
+.btn.primary::before { content:'▶ '; }
+.btn.danger { color: var(--red); }
+/* nav tab */
+.tab { composes: btn; }
+.tab.active { color: var(--amber); text-shadow: 0 0 8px rgba(255,179,71,.7);
+  box-shadow: inset 2px 2px 0 var(--metal-lo), inset -2px -2px 0 var(--metal-hi), 0 0 12px rgba(255,179,71,.25); }
+
+/* ── Category rail ─────────────────────────────────────────────── */
+.rail { width: 250px; }
+.rail-item {
+  display:flex; justify-content:space-between; align-items:center;
+  font-family: var(--font-pixel); font-size: 9px; letter-spacing:1px;
+  padding: 11px 12px 9px; color: var(--text-dim); cursor: pointer;
+  border: 2px solid transparent; border-bottom: 2px solid var(--line);
+}
+.rail-item:hover { color: var(--text); background: rgba(55,214,255,.04); }
+.rail-item.active {
+  color: var(--cyan); background: linear-gradient(90deg, rgba(55,214,255,.13), transparent);
+  border: 2px solid rgba(55,214,255,.5); text-shadow: 0 0 6px rgba(55,214,255,.6);
+  box-shadow: 0 0 10px rgba(55,214,255,.15) inset;
+}
+.rail-item .count { color: var(--text-dim); font-size: 8px; }
+.rail-item.active .count { color: var(--cyan); }
+
+/* ── Game tile ─────────────────────────────────────────────────── */
+.tile {
+  width: 168px; background: var(--panel-2);
+  border: 3px solid var(--metal-lo); cursor: pointer;
+  box-shadow: inset 1px 1px 0 var(--metal-hi), 0 4px 0 #04060c;
+  padding: 5px;
+}
+.tile:hover { border-color: #33405f; }
+.tile.selected {
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 1px var(--cyan), 0 0 16px rgba(55,214,255,.5), inset 0 0 8px rgba(55,214,255,.12);
+}
+.tile .cover {
+  aspect-ratio: 3/4; width: 100%;
+  background: linear-gradient(135deg,#25203e 0%,#0e2033 55%,#3d1428 100%);
+  border: 2px solid #060a12; image-rendering: pixelated;
+  display:flex; align-items:center; justify-content:center;
+  font-family: var(--font-pixel); font-size:9px; color:#8b96b8; text-align:center; line-height:1.7;
+}
+.tile .name {
+  font-family: var(--font-pixel); font-size: 8px; line-height: 1.5; letter-spacing:.5px;
+  text-align:center; padding: 8px 2px 4px; color: var(--text); min-height: 34px;
+}
+.tile .meta { display:flex; justify-content:center; gap:12px; padding: 2px 0 4px; font-size:15px; }
+.tile .meta .ok  { color: var(--green); text-shadow:0 0 5px rgba(109,255,92,.6); }
+.tile .meta .fav { color: var(--magenta); }
+.tile .meta .dl  { color: var(--text-dim); }
+
+/* ── Terminal / status bar ─────────────────────────────────────── */
+.statusbar {
+  display:flex; gap:34px; align-items:center;
+  font-family: var(--font-term); font-size: 19px;
+  background: #04070c; border: 2px solid var(--line); padding: 8px 16px;
+  box-shadow: inset 0 0 14px rgba(0,0,0,.85);
+}
+.statusbar .k { color: var(--text-dim); }
+.statusbar .cyan { color: var(--cyan); }  .statusbar .green { color: var(--green); }
+.statusbar .amber { color: var(--amber); }
+.cursor { display:inline-block; width:10px; height:18px; background:var(--green); vertical-align:-3px;
+  animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+
+/* prototype page scaffolding (not part of the design system) */
+.row { display:flex; gap:26px; flex-wrap:wrap; align-items:flex-start; margin-bottom: 30px; }
+.demo-label { font-family: var(--font-term); color: var(--text-dim); font-size: 17px; margin: 0 0 8px 2px; text-transform: uppercase; letter-spacing:1px;}
+.pad { padding: 16px; }
+</style>
+</head>
+<body>
+
+<button id="crt-toggle" class="btn" style="position:fixed;top:14px;right:16px;z-index:1000">CRT: OFF</button>
+
+<!-- 1 ▸ TITLE PLATE -->
+<p class="demo-label">1 · title plate + turbo readout</p>
+<div class="row">
+  <div class="frame logo-plate">
+    <div class="logo"><span class="word turbo" data-text="TURBO">TURBO</span><span class="word dos" data-text="DOS">DOS</span></div>
+    <div class="mhz"><div class="num">66</div><div class="lbl"><span class="turbo-led"></span>MHZ&nbsp;TURBO</div></div>
+  </div>
+</div>
+
+<!-- 2 ▸ BUTTONS -->
+<p class="demo-label">2 · buttons (nav tab · secondary · primary play · danger)</p>
+<div class="row" style="align-items:center">
+  <button class="btn tab active">💾 Library</button>
+  <button class="btn">🕹 Add Game</button>
+  <button class="btn">⚙ Settings</button>
+  <button class="btn primary">Play Game</button>
+  <button class="btn danger">✕ Remove</button>
+</div>
+
+<!-- 3 ▸ FRAMED PANEL + CATEGORY RAIL -->
+<p class="demo-label">3 · riveted frame panel with category rail</p>
+<div class="row">
+  <div class="frame rail">
+    <div class="frame-title">Categories</div>
+    <div class="pad" style="padding:8px">
+      <div class="rail-item active"><span>💾 All Games</span><span class="count">40</span></div>
+      <div class="rail-item"><span>🔫 FPS</span><span class="count">10</span></div>
+      <div class="rail-item"><span>🏃 Platformer</span><span class="count">17</span></div>
+      <div class="rail-item"><span>🚀 Shooter</span><span class="count">7</span></div>
+      <div class="rail-item"><span>🏎 Racing</span><span class="count">2</span></div>
+    </div>
+  </div>
+
+  <!-- 4 ▸ GAME TILES -->
+  <div style="flex:1;min-width:560px">
+    <p class="demo-label">4 · game tiles (normal / selected / hover-me)</p>
+    <div style="display:flex;gap:18px">
+      <div class="tile">
+        <div class="cover">COVER<br>ART</div>
+        <div class="name">ARCTIC ADVENTURE</div>
+        <div class="meta"><span class="ok">✔</span><span class="fav">♥</span><span class="dl">💾</span></div>
+      </div>
+      <div class="tile selected">
+        <div class="cover">COVER<br>ART</div>
+        <div class="name">DUKE NUKEM (SHAREWARE)</div>
+        <div class="meta"><span class="ok">✔</span><span class="fav">♥</span><span class="dl">💾</span></div>
+      </div>
+      <div class="tile">
+        <div class="cover">COVER<br>ART</div>
+        <div class="name">SHADOW WARRIOR</div>
+        <div class="meta"><span class="ok">✔</span><span class="fav">♥</span><span class="dl">💾</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 5 ▸ DETAIL PANEL SAMPLE -->
+<p class="demo-label">5 · detail panel (terminal text + controls table)</p>
+<div class="row">
+  <div class="frame" style="width:430px">
+    <div class="frame-title">Duke Nukem (Shareware)</div>
+    <div class="pad">
+      <p style="line-height:1.35">Episode 1 of Apogee's side-scrolling classic. Duke takes on Dr. Proton and his Techbot army across three action-packed levels.</p>
+      <p style="margin-top:12px;color:var(--amber);font-family:var(--font-pixel);font-size:9px;letter-spacing:1px">CONTROLS</p>
+      <table style="width:100%;margin-top:8px;border-collapse:collapse">
+        <tr><td style="color:var(--text-dim);padding:3px 0">Move Left / Right</td><td style="text-align:right">◀ ▶</td></tr>
+        <tr><td style="color:var(--text-dim);padding:3px 0">Jump</td><td style="text-align:right;color:var(--cyan)">Ctrl</td></tr>
+        <tr><td style="color:var(--text-dim);padding:3px 0">Fire</td><td style="text-align:right;color:var(--cyan)">Alt</td></tr>
+      </table>
+      <div style="margin-top:16px;display:flex;gap:12px">
+        <button class="btn primary" style="flex:1">Play Game</button>
+        <button class="btn">⚙</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 6 ▸ STATUS BAR -->
+<p class="demo-label">6 · status bar</p>
+<div class="statusbar">
+  <span><span class="k">C:\&gt;</span> <span class="green">40 GAMES FOUND</span><span class="cursor"></span></span>
+  <span class="k">INSTALLED: <span class="cyan">40</span></span>
+  <span class="k">LAST PLAYED: <span class="amber">SHADOW WARRIOR</span></span>
+  <span class="k" style="margin-left:auto">v0.2.0</span>
+</div>
+
+<script>
+  const t = document.getElementById('crt-toggle');
+  t.addEventListener('click', () => {
+    const on = document.body.classList.toggle('crt');
+    t.textContent = 'CRT: ' + (on ? 'ON' : 'OFF');
+  });
+</script>
+</body>
+</html>

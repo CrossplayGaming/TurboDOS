@@ -1,0 +1,19 @@
+HOW TO ADD GAMES TO DOSDECK
+============================
+
+1. Create a folder for your game inside this GAMES folder.
+   Example: GAMES\DOOM\
+
+2. Copy your game files into that folder (the .EXE, .WAD, etc.).
+   Example: GAMES\DOOM\DOOM.EXE
+
+3. Launch DOSDeck. Your game will appear in the library automatically.
+
+TIPS:
+- Name the folder after the game — DOSDeck uses the folder name as the game title.
+- The main .EXE should match the folder name when possible (e.g. DOOM folder → DOOM.EXE).
+- Underscores and dashes in folder names become spaces (e.g. DUKE_NUKEM_3D → Duke Nukem 3D).
+- If DOSDeck can't find art automatically, open the game and click "Scrape info".
+
+SUPPORTED FORMATS:
+- DOS games in folders containing .EXE, .COM, or .BAT files.
