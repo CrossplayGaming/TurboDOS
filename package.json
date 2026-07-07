@@ -1,6 +1,6 @@
 {
   "name": "turbodos",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "type": "module",
   "scripts": {
     "dev": "tauri dev --target x86_64-pc-windows-msvc",

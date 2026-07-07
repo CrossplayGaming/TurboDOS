@@ -1,6 +1,6 @@
 [package]
 name = "dosdeck"
-version = "0.3.0"
+version = "0.3.1"
 description = "TURBODOS — controls-first DOS game launcher"
 authors = []
 edition = "2021"

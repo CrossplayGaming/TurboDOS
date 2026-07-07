@@ -122,6 +122,12 @@ fn build_engine_cfg_name(install_path: &str) -> &'static str {
 fn write_duke3d_key_defs(install_path: &str, bindings: &[BindingArg], always_run: bool, fire_alt: Option<&str>) -> Result<(), String> {
     let cfg_path = std::path::Path::new(install_path).join(build_engine_cfg_name(install_path));
     let existing = std::fs::read_to_string(&cfg_path).unwrap_or_default();
+    // If the bundled BMOUSE.EXE mouse driver is present, route mouse input through it:
+    // ControllerType 3 = "Keyboard and External" + ExternalFilename = BMOUSE.EXE. This is
+    // what makes Build-engine vertical mouselook work under DOSBox (the internal mouse,
+    // ControllerType 1, filters out the smaller axis so aim up/down barely registers).
+    // Without BMOUSE present, keep 1 (keyboard + internal mouse turning).
+    let bmouse = std::path::Path::new(install_path).join("BMOUSE.EXE").exists();
 
     let mut out = String::new();
     let mut in_key_section = false;
@@ -132,8 +138,15 @@ fn write_duke3d_key_defs(install_path: &str, bindings: &[BindingArg], always_run
         }
         if in_key_section { continue; }
         if trimmed.starts_with("ControllerType") {
-            // ControllerType 1 = keyboard+mouse: enables both keyboard movement and mouse analog turning.
-            out.push_str("ControllerType = 1\n");
+            if bmouse {
+                out.push_str("ControllerType = 3\n");
+                out.push_str("ExternalFilename = \"BMOUSE.EXE\"\n");
+            } else {
+                out.push_str("ControllerType = 1\n");
+            }
+        } else if trimmed.starts_with("ExternalFilename") {
+            // Re-emitted alongside ControllerType when BMOUSE is present; else preserve as-is.
+            if !bmouse { out.push_str(line); out.push('\n'); }
         } else if trimmed.starts_with("RunMode") {
             out.push_str(&format!("RunMode = {}\n", if always_run { 1 } else { 0 }));
         } else {
@@ -2831,7 +2844,7 @@ MusicToggle = 1\n\
 ControllerType = 1\n\
 JoystickPort = 0\n\
 MouseSensitivity = 32768\n\
-MouseAiming = 0\n\
+MouseAiming = 1\n\
 MouseButton0 = \"Fire\"\n\
 MouseButtonClicked0 = \"\"\n\
 MouseButton1 = \"Strafe\"\n\
@@ -2840,7 +2853,7 @@ MouseButton2 = \"Move_Forward\"\n\
 MouseButtonClicked2 = \"\"\n\
 MouseAnalogAxes0 = \"analog_turning\"\n\
 MouseAnalogScale0 = 65536\n\
-MouseAnalogAxes1 = \"\"\n\
+MouseAnalogAxes1 = \"analog_looking\"\n\
 MouseAnalogScale1 = 65536\n\
 \n\
 [Misc]\n\
