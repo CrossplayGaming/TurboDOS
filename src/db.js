@@ -25,7 +25,10 @@ const SEED_GAMES = [
     folder_name: "WOLF3D",
     download_url: "https://archive.org/download/Wolfenstein3d/Wolfenstein3dV14sw.ZIP",
     buy_url: "https://www.gog.com/en/game/wolfenstein_3d" },
-  { title: "Duke Nukem 3D", genre_tag: "fps", subtype: "build-engine", engine: "build", description: "Duke Nukem is back and the aliens have invaded. Destroy them with extreme prejudice and plenty of one-liners.", art_path: null, dosbox_config: "", install_path: "", executable: "DUKE3D.EXE", verified: 1, source_type: "referenced",
+  // MLOOK.BAT launches the game through BMOUSE.EXE (bundled) — a DOS mouse driver that
+  // fixes Build-engine mouselook filtering so vertical aim works under DOSBox. Reads
+  // DUKE3D.CFG (MouseAiming=1, Y-axis analog_looking).
+  { title: "Duke Nukem 3D", genre_tag: "fps", subtype: "build-engine", engine: "build", description: "Duke Nukem is back and the aliens have invaded. Destroy them with extreme prejudice and plenty of one-liners.", art_path: null, dosbox_config: "", install_path: "", executable: "MLOOK.BAT", verified: 1, source_type: "referenced",
     folder_name: "DUKE3D",
     download_url: "https://archive.org/download/3D_Realms_Duke_Nukem_3D_Shareware/3D%20Realms%20-%20Duke%20Nukem%203D%20%28Shareware%20Version%29.zip",
     buy_url: "https://www.zoom-platform.com/product/duke-nukem-3d-atomic-edition" },
@@ -173,7 +176,9 @@ const SEED_GAMES = [
     download_url: "https://archive.org/download/rott_shareware/ROTT.zip",
     buy_url: "https://store.steampowered.com/app/308400/Rise_of_the_Triad_2013/" },
 
-  { title: "Shadow Warrior (Shareware)", genre_tag: "fps", subtype: "build-engine", engine: "build", description: "3D Realms' 1997 Build-engine action FPS. Lo Wang tears through ninja armies with katanas, shurikens, and rocket launchers across the shareware episode.", art_path: null, dosbox_config: "", install_path: "", executable: "SW.EXE", verified: 0, source_type: "bundled",
+  // MLOOK.BAT launches SW.EXE via bundled BMOUSE.EXE (Build-engine mouselook fix). Reads
+  // SW.CFG (MouseAiming=1, MouseAimingOn=1, Y-axis analog_looking).
+  { title: "Shadow Warrior (Shareware)", genre_tag: "fps", subtype: "build-engine", engine: "build", description: "3D Realms' 1997 Build-engine action FPS. Lo Wang tears through ninja armies with katanas, shurikens, and rocket launchers across the shareware episode.", art_path: null, dosbox_config: "", install_path: "", executable: "MLOOK.BAT", verified: 0, source_type: "bundled",
     folder_name: "SWARS",
     download_url: "https://github.com/CrossplayGaming/dosdeck-packs/releases/download/v1/shadow-warrior.zip",
     buy_url: "https://store.steampowered.com/app/238070/Shadow_Warrior_Classic_Redux/" },
@@ -1728,6 +1733,11 @@ async function createSqlStore() {
   // exe (Realms installer→game; Mystic's non-existent MYSTIC.EXE→the actual TOWERS.EXE).
   await db.execute(`UPDATE games SET executable='ROCSW.EXE'  WHERE title='Realms of Chaos (Shareware)' AND executable='INSTALL.EXE'`);
   await db.execute(`UPDATE games SET executable='TOWERS.EXE' WHERE title='Mystic Towers (Shareware)'   AND executable='MYSTIC.EXE'`);
+  // Migrate: route Build-engine games through MLOOK.BAT → BMOUSE.EXE for working
+  // mouselook (the pack now bundles both). Guarded to the old exe so it only flips
+  // installs that predate the BMOUSE pack; re-download supplies the new files.
+  await db.execute(`UPDATE games SET executable='MLOOK.BAT' WHERE title='Duke Nukem 3D'              AND executable='DUKE3D.EXE'`);
+  await db.execute(`UPDATE games SET executable='MLOOK.BAT' WHERE title='Shadow Warrior (Shareware)' AND executable='SW.EXE'`);
   // Migrate: set always_run=1 on existing Modern WASD schemes for DOOM-engine games
   await db.execute(`
     UPDATE schemes SET always_run=1
