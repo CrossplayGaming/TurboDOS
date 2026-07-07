@@ -325,6 +325,26 @@ body:not(.no-crt) #crt-bezel::after {
 }
 @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
 
+/* Exit / power-off button — borderless fullscreen window has no title-bar X */
+.nav-exit {
+  margin-left: 10px;
+  width: 34px; height: 34px;
+  font-size: 17px; line-height: 1;
+  background: #1a0606;
+  border: 2px solid #4a1414;
+  color: #ff5c5c;
+  cursor: pointer;
+  box-shadow: inset 0 0 10px rgba(0,0,0,.8);
+  transition: color .12s, box-shadow .12s, background .12s;
+}
+.nav-exit:hover {
+  background: #2a0808;
+  color: #ff8a8a;
+  border-color: #7a2020;
+  box-shadow: inset 0 0 10px rgba(0,0,0,.8), 0 0 10px rgba(255,60,60,.5);
+}
+.nav-exit:active { background: #050202; }
+
 /* ─── SCREEN CONTAINER ─── */
 #screens { flex: 1; overflow: hidden; position: relative; }
 .screen {

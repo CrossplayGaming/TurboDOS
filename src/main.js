@@ -150,6 +150,7 @@ function renderShell() {
         <button class="nav-icon ${shuffleOn() ? 'on' : ''}" id="music-shuffle" title="Shuffle tracks">🔀</button>
       </div>
       <div class="mhz"><div class="num">66</div><div class="lbl"><span class="power-led"></span>MHZ&nbsp;TURBO</div></div>
+      <button class="nav-exit" id="app-exit" title="Exit TURBODOS">⏻</button>
     </nav>
     <div id="screens">
       <div class="screen" id="library-screen"></div>
@@ -220,6 +221,26 @@ function renderShell() {
   };
   window.addEventListener('music-track', (e) => renderTrackName(e.detail?.title));
   renderTrackName(currentTrack());
+
+  // Exit button — the window is borderless + fullscreen (no title-bar X), so this is
+  // the primary way out. Route through the window's close() so the existing
+  // onCloseRequested handler runs the shutdown splash then hard-exits via Rust.
+  const exitBtn = document.getElementById('app-exit');
+  if (exitBtn) {
+    exitBtn.addEventListener('click', async () => {
+      blip.toggle();
+      if (typeof window.__TAURI__ !== 'undefined') {
+        try {
+          const { getCurrentWindow } = await import('@tauri-apps/api/window');
+          await getCurrentWindow().close();
+        } catch {
+          try { const { invoke } = await import('@tauri-apps/api/core'); await invoke('exit_app'); } catch { /* no exit path left */ }
+        }
+      } else {
+        console.log('[TURBODOS] Exit clicked (simulated — no Tauri host)');
+      }
+    });
+  }
 
   updateStatusBar();
 }
