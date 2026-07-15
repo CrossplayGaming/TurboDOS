@@ -14,6 +14,12 @@ function supportsAlwaysRun(game) {
   const exe = (game.executable || '').toLowerCase();
   return DOOM_ENGINE_EXES.includes(exe) || BUILD_ENGINE_EXES.includes(exe) || GENERIC_ALWAYS_RUN_EXES.includes(exe);
 }
+// Build-engine games (Duke3D, Shadow Warrior) route mouse through BMOUSE; their vertical
+// freelook must be toggled on in-game with U, so the side panel shows a note.
+function isBuildEngine(game) {
+  return (game?.engine || '').toLowerCase() === 'build'
+    || BUILD_ENGINE_EXES.includes((game?.executable || '').toLowerCase());
+}
 
 // ─── State ───
 const state = {
@@ -123,7 +129,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // ─── Shell ───
-const APP_VERSION = '0.3.1';
+const APP_VERSION = '0.3.2';
 
 function renderShell() {
   // CRT scanlines are OFF by default; the settings toggle persists the choice.
@@ -466,7 +472,11 @@ async function scanGamesFolder() {
   // found by this scan. Users remove games explicitly via Remove from Library.
   for (const g of existing) {
     if (!matchedIds.has(g.id) && g.install_path) {
-      await db.updateGame(g.id, { install_path: '', executable: '' });
+      // Clear only the install path (marks it uninstalled). Keep the configured
+      // executable so a later re-download restores the correct launcher — e.g. a
+      // Build game's MLOOK.BAT (BMOUSE) rather than falling back to the raw game exe.
+      // Copied games re-take the scanned exe on re-add anyway (see useScannedExe above).
+      await db.updateGame(g.id, { install_path: '' });
     }
   }
 
@@ -697,7 +707,17 @@ function renderSidePanel() {
     ${!game.install_path && game.download_url ? `<button class="btn-secondary" id="download-btn" style="width:100%;margin-bottom:8px;color:var(--green);border-color:var(--green-dim)">⬇ Download Shareware</button>` : ''}
     ${!game.install_path && !game.download_url && !game.buy_url ? `<div style="font-size:16px;color:var(--amber);margin-bottom:8px">📁 Drop this game's folder into the GAMES folder, then relaunch.</div>` : ''}
     ${game.buy_url ? `<button class="btn-secondary" id="side-buy-btn" style="width:100%;margin-bottom:8px">🛒 Buy Full Version</button>` : ''}
-    <div style="display:flex;gap:8px;margin-bottom:10px">
+    ${schemes.length ? `
+      <div class="control-section-label">Controls</div>
+      <div class="scheme-tabs">
+        ${schemes.map(s => `<button class="scheme-tab ${s.id === activeSchemeId ? 'active' : ''}" data-scheme="${s.id}">${s.name}</button>`).join('')}
+      </div>
+      ${isBuildEngine(game) ? `<div class="freelook-note">🖱 <b>Mouse freelook:</b> tap <b>U</b> in-game to turn look up/down on (once per session).</div>` : ''}
+      <div class="binding-preview" style="max-height:150px">
+        ${bindings.slice(0, 8).map(b => `<div class="binding-row"><span class="binding-action">${b.action}</span><span class="binding-key">${b.input}</span></div>`).join('')}
+        ${bindings.length > 8 ? `<div class="binding-row"><span class="binding-action">+${bindings.length - 8} more — see ⚙ Manage</span></div>` : ''}
+      </div>` : ''}
+    <div style="display:flex;gap:8px;margin:10px 0">
       ${game.install_path ? `<button class="btn-wizard" id="side-ctrl-btn" style="flex:1;justify-content:center">🎮 Controller</button>` : ''}
       <button class="btn-wizard" id="side-manage-btn" style="flex:1;justify-content:center">⚙ Manage</button>
     </div>
@@ -705,15 +725,6 @@ function renderSidePanel() {
       ? `<img class="side-art" src="${artUrl}" alt="${game.title} cover">`
       : `<div class="side-art-placeholder">${genreIcon(game.genre_tag)}</div>`}
     <div class="side-desc" style="display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden">${game.description || ''}</div>
-    ${schemes.length ? `
-      <div class="control-section-label">Controls</div>
-      <div class="scheme-tabs">
-        ${schemes.map(s => `<button class="scheme-tab ${s.id === activeSchemeId ? 'active' : ''}" data-scheme="${s.id}">${s.name}</button>`).join('')}
-      </div>
-      <div class="binding-preview" style="max-height:150px">
-        ${bindings.slice(0, 8).map(b => `<div class="binding-row"><span class="binding-action">${b.action}</span><span class="binding-key">${b.input}</span></div>`).join('')}
-        ${bindings.length > 8 ? `<div class="binding-row"><span class="binding-action">+${bindings.length - 8} more — see ⚙ Manage</span></div>` : ''}
-      </div>` : ''}
   `;
 
   c.querySelectorAll('.scheme-tab').forEach(t => t.addEventListener('click', async () => {

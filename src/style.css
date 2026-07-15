@@ -600,6 +600,14 @@ body:not(.no-crt) #crt-bezel::after {
 }
 
 .scheme-tabs { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+.freelook-note {
+  background: rgba(255,176,0,.07);
+  border-left: 3px solid var(--amber);
+  color: var(--text-secondary);
+  font-size: 12px; line-height: 1.45;
+  padding: 7px 10px; margin: -4px 0 12px;
+}
+.freelook-note b { color: var(--amber); }
 .scheme-tab {
   background: var(--metal);
   border: 2px solid var(--metal-lo);
