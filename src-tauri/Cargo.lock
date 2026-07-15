@@ -881,7 +881,7 @@ dependencies = [
 
 [[package]]
 name = "dosdeck"
-version = "0.3.0"
+version = "0.3.3"
 dependencies = [
  "dirs 5.0.1",
  "gilrs",

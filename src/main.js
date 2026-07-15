@@ -129,7 +129,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // ─── Shell ───
-const APP_VERSION = '0.3.2';
+const APP_VERSION = '0.3.3';
 
 function renderShell() {
   // CRT scanlines are OFF by default; the settings toggle persists the choice.

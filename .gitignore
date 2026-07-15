@@ -2,3 +2,4 @@ src-tauri/src/secrets.rs
 src-tauri/target/
 node_modules/
 dist/
+*.log

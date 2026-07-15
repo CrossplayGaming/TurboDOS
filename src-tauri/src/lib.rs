@@ -131,12 +131,22 @@ fn write_duke3d_key_defs(install_path: &str, bindings: &[BindingArg], always_run
 
     let mut out = String::new();
     let mut in_key_section = false;
+    // Capture the game's existing [KeyDefinitions] so we can preserve game-specific keys
+    // our Duke3D-shaped template doesn't know about (e.g. Shadow Warrior's Smoke_Bomb,
+    // Gas_Bomb, Weapon_8..10). Dropping them makes SW load a truncated key list and glitch
+    // (notably the mouse-aiming U toggle stops working under the WASD scheme).
+    let mut existing_keydefs: Vec<String> = Vec::new();
     for line in existing.lines() {
         let trimmed = line.trim();
         if trimmed.starts_with('[') {
             in_key_section = trimmed.eq_ignore_ascii_case("[KeyDefinitions]");
         }
-        if in_key_section { continue; }
+        if in_key_section {
+            if !trimmed.starts_with('[') && !trimmed.is_empty() {
+                existing_keydefs.push(trimmed.to_string());
+            }
+            continue;
+        }
         if trimmed.starts_with("ControllerType") {
             if bmouse {
                 out.push_str("ControllerType = 3\n");
@@ -282,9 +292,29 @@ fn write_duke3d_key_defs(install_path: &str, bindings: &[BindingArg], always_run
             section.push_str(&format!("{} = \"{}\" \"\"\n", def, val));
         }
     }
-    eprintln!("[TURBODOS] Duke3D KeyDefinitions: {} explicit, {} cleared conflicts",
+    // Re-append any game-specific keydefs our template didn't emit (e.g. Shadow Warrior
+    // extras), clearing any whose key the active scheme already claimed to avoid double-binds.
+    for kd in &existing_keydefs {
+        let action = kd.split('=').next().map(|s| s.trim()).unwrap_or("");
+        if action.is_empty() || final_defs.iter().any(|(d, _)| *d == action) { continue; }
+        let prim = kd.find('"')
+            .and_then(|i| kd[i + 1..].find('"').map(|j| &kd[i + 1..i + 1 + j]))
+            .unwrap_or("");
+        if !prim.is_empty() && bound_keys.contains(prim) {
+            section.push_str(&format!("{} = \"\" \"\"\n", action));
+        } else {
+            section.push_str(kd);
+            section.push('\n');
+        }
+    }
+
+    eprintln!("[TURBODOS] Duke3D KeyDefinitions: {} explicit, {} cleared conflicts, {} preserved extras",
         explicit.len(),
-        final_defs.iter().filter(|(_, v)| v.is_empty()).count());
+        final_defs.iter().filter(|(_, v)| v.is_empty()).count(),
+        existing_keydefs.iter().filter(|kd| {
+            let a = kd.split('=').next().map(|s| s.trim()).unwrap_or("");
+            !a.is_empty() && !final_defs.iter().any(|(d, _)| *d == a)
+        }).count());
 
     let final_content = format!("{}\n{}", out, section);
     std::fs::write(&cfg_path, final_content).map_err(|e| e.to_string())?;
