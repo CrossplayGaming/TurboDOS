@@ -1,0 +1,51 @@
+name: FUSE Android APK
+
+# Builds an installable debug APK and publishes it as a workflow artifact.
+# Runs on GitHub's runners because they have the Android SDK; the web assets
+# in fuse/prototype are copied into the app by `cap sync`.
+on:
+  push:
+    paths:
+      - 'fuse/**'
+      - '.github/workflows/fuse-android.yml'
+  workflow_dispatch:
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: fuse/package-lock.json
+
+      # Gradle 8.2 / AGP 8.2.1 do not run on JDK 21 — 17 is the supported pair.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        working-directory: fuse
+        run: npm ci
+
+      - name: Copy web assets into the Android project
+        working-directory: fuse
+        run: npx cap sync android
+
+      - name: Build debug APK
+        working-directory: fuse/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon --stacktrace
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fuse-debug-apk
+          path: fuse/android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error

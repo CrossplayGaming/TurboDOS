@@ -3,3 +3,14 @@ src-tauri/target/
 node_modules/
 dist/
 *.log
+
+# FUSE Android build
+fuse/node_modules/
+fuse/android/.gradle/
+fuse/android/build/
+fuse/android/app/build/
+fuse/android/local.properties
+fuse/android/capacitor-cordova-android-plugins/
+fuse/android/app/src/main/assets/public/
+fuse/android/app/src/main/assets/capacitor.config.json
+fuse/android/app/src/main/assets/capacitor.plugins.json

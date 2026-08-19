@@ -1,0 +1,11 @@
+{
+  "appId": "com.crossplaygaming.fuse",
+  "appName": "FUSE",
+  "webDir": "prototype",
+  "android": {
+    "backgroundColor": "#0B0E14"
+  },
+  "server": {
+    "androidScheme": "https"
+  }
+}

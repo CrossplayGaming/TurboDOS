@@ -5,11 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0B0E14">
 <title>FUSE</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&family=Saira+Condensed:wght@600;700&display=swap">
 <style>
 :root{
+  /* vertical space the board must share with masthead, strip and hint —
+     used to size the board off viewport HEIGHT so landscape and short
+     screens shrink it instead of overflowing */
+  --vchrome:266px;
+
   --ground:#0B0E14;
   --panel:#12171F;
   --plate:#0E1219;
@@ -40,9 +47,15 @@ body{
   color:var(--ink);
   font-family:"Saira Condensed","Arial Narrow",system-ui,sans-serif;
   min-height:100vh;
+  min-height:100dvh;
   display:flex;
   justify-content:center;
-  padding:16px 16px 28px;
+  /* dodge notches and gesture bars — viewport-fit=cover puts us under them */
+  padding:
+    max(16px, env(safe-area-inset-top)) 
+    max(16px, env(safe-area-inset-right))
+    max(28px, env(safe-area-inset-bottom))
+    max(16px, env(safe-area-inset-left));
   -webkit-tap-highlight-color:transparent;
   -webkit-user-select:none;user-select:none;
   overflow-x:hidden;
@@ -98,7 +111,7 @@ body{
 @keyframes bump{0%{transform:scale(1)}30%{transform:scale(1.16)}100%{transform:scale(1)}}
 
 /* ---------- board ---------- */
-.stage{position:relative}
+.stage{position:relative;width:100%;max-width:min(400px, calc((100dvh - var(--vchrome)) * 5 / 6));align-self:center}
 
 .bezel{
   position:relative;
@@ -265,6 +278,23 @@ body{
   100%{opacity:0;transform:translate(-50%,-96%) scale(.98)}
 }
 
+.toast{
+  position:absolute;left:50%;bottom:14px;transform:translateX(-50%);
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:10.5px;font-weight:600;letter-spacing:.14em;
+  color:var(--ink);
+  background:rgba(9,12,17,.95);
+  border:1px solid var(--line-hi);
+  border-radius:4px;padding:9px 15px;white-space:nowrap;
+  pointer-events:none;z-index:5;
+  animation:toast 2s ease-out forwards;
+}
+@keyframes toast{
+  0%{opacity:0;transform:translateX(-50%) translateY(6px)}
+  10%,80%{opacity:1;transform:translateX(-50%) translateY(0)}
+  100%{opacity:0;transform:translateX(-50%) translateY(0)}
+}
+
 /* ---------- telemetry strip ---------- */
 .strip{
   display:flex;justify-content:space-between;gap:6px;
@@ -334,6 +364,16 @@ body{
   border-radius:4px;
   padding:10px 22px;
   background:rgba(255,255,255,.03);
+}
+
+@media (max-height:640px){
+  :root{--vchrome:150px}
+  .hint{display:none}
+  .wordmark{font-size:22px;letter-spacing:.3em}
+  .markrule{width:88px;height:4px}
+  .readout .value{font-size:22px}
+  .readout.secondary .value{font-size:14px}
+  #app{gap:9px}
 }
 
 @media (prefers-reduced-motion:reduce){
@@ -946,6 +986,41 @@ document.addEventListener("keydown", function(e){
     if (!busy) paint({ spawned: [] });
   }
 });
+
+/* Android hardware/gesture back. Inside a run, a single back press would
+   otherwise kill the app mid-game with no warning, so require a second press.
+   Inert on the web, where Capacitor is not present. */
+function showToast(text){
+  const prev = stageEl.querySelector(".toast");
+  if (prev) prev.remove();
+  const el = document.createElement("div");
+  el.className = "toast";
+  el.textContent = text;
+  stageEl.appendChild(el);
+  setTimeout(function(){ el.remove(); }, 2000);
+}
+
+(function wireBackButton(){
+  const cap = window.Capacitor;
+  const app = cap && cap.Plugins && cap.Plugins.App;
+  if (!app || typeof app.addListener !== "function") return;
+  let armed = 0;
+  app.addListener("backButton", function(){
+    const idle = game.over || game.turn === 1;
+    if (idle || Date.now() - armed < 2000){ app.exitApp(); return; }
+    armed = Date.now();
+    showToast("PRESS BACK AGAIN TO QUIT");
+    buzz(12);
+  });
+})();
+
+/* Offline shell. Skipped on file:// and inside the Capacitor WebView, where
+   the assets are already local and a worker buys nothing. */
+if ("serviceWorker" in navigator && location.protocol.startsWith("http") && !window.Capacitor){
+  window.addEventListener("load", function(){
+    navigator.serviceWorker.register("sw.js").catch(function(){ /* not fatal */ });
+  });
+}
 
 /* a backgrounded tab should not keep an audio context alive */
 document.addEventListener("visibilitychange", function(){

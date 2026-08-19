@@ -1,0 +1,20 @@
+{
+  "name": "fuse-game",
+  "version": "0.1.0",
+  "private": true,
+  "description": "FUSE — one-thumb puzzle. Capacitor wrapper around the standalone web build in prototype/.",
+  "scripts": {
+    "android:add": "cap add android",
+    "android:sync": "cap sync android",
+    "android:apk": "cap sync android && cd android && ./gradlew assembleDebug",
+    "android:open": "cap open android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.2.0",
+    "@capacitor/app": "^6.0.2",
+    "@capacitor/core": "^6.2.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.2.0"
+  }
+}

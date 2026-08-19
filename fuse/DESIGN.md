@@ -133,5 +133,11 @@ does animate continuously is the pulse on fuse-1 and fuse-2 charges, which is a
 compositor-driven opacity animation on a handful of cells. Everything honours
 `prefers-reduced-motion`, which also suppresses particles entirely.
 
-Intended packaging: PWA for browser, Capacitor for the Android APK, Tauri for
-desktop.
+The page is height-aware rather than width-only: the board is sized off
+`100dvh` minus the surrounding chrome, so landscape and short screens shrink it
+instead of overflowing, and `dvh` keeps it correct as a mobile URL bar shows and
+hides. Safe-area insets are consumed so a notch cannot sit over the masthead.
+
+Packaging: **PWA** (manifest + service worker, portrait, standalone, offline),
+**Capacitor** for the Android APK, Tauri for desktop. See `BUILDING.md` — note
+the APK has not been compiled or run yet.
