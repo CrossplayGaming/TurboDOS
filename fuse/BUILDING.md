@@ -81,9 +81,13 @@ one-tap restart, reduced-motion, audio persistence, keyboard path, and layout at
 390x844, 844x390, and 360x640 with no overflow in any of them. The service
 worker registers and the manifest and icons serve correctly over HTTP.
 
-**Not verified: the APK itself.** It has never been compiled or run. The
-container this was authored in cannot reach `dl.google.com`, so the Android SDK
-could not be installed, and it ships JDK 21 which this Gradle cannot use. The
-scaffolding is structurally correct and the CI workflow is written against it,
-but the first real build — yours or CI's — is the first time it will have been
-exercised. Expect to fix something.
+**The APK builds.** CI compiled it on the first attempt — `BUILD SUCCESSFUL`,
+108 Gradle tasks, JDK 17, a 3.4 MB debug APK published as a workflow artifact.
+The workflow also unzips the APK and asserts the game payload is inside it,
+because a Capacitor build will happily succeed with an empty WebView if
+`cap sync` did not copy anything.
+
+**Still not verified: the APK running on a device.** Nobody has installed it. The
+portrait lock, the adaptive icon masking, the back-button guard, and audio in a
+WebView are all correct in principle and none of them has been seen working on
+real hardware. That is the next thing to check.

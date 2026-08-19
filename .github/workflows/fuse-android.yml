@@ -7,6 +7,7 @@ on:
   push:
     paths:
       - 'fuse/**'
+      - '!fuse/**.md'
       - '.github/workflows/fuse-android.yml'
   workflow_dispatch:
 
@@ -43,6 +44,26 @@ jobs:
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon --stacktrace
+
+      # A Capacitor APK will build happily with an empty WebView, so assert the
+      # game payload actually made it in rather than trusting the exit code.
+      - name: Verify the APK contains the game
+        working-directory: fuse/android/app/build/outputs/apk/debug
+        run: |
+          set -euo pipefail
+          APK=$(ls *.apk | head -1)
+          echo "inspecting $APK"
+          unzip -l "$APK" | grep -q 'AndroidManifest.xml' \
+            || { echo "::error::no AndroidManifest.xml in APK"; exit 1; }
+          unzip -l "$APK" | grep -q 'assets/public/index.html' \
+            || { echo "::error::web assets missing from APK — cap sync did not copy"; exit 1; }
+          SIZE=$(unzip -p "$APK" assets/public/index.html | wc -c)
+          echo "assets/public/index.html: $SIZE bytes"
+          [ "$SIZE" -gt 20000 ] \
+            || { echo "::error::index.html looks truncated ($SIZE bytes)"; exit 1; }
+          unzip -p "$APK" assets/public/index.html | grep -q 'blast reach' \
+            || { echo "::error::game payload not found inside index.html"; exit 1; }
+          echo "APK payload verified"
 
       - uses: actions/upload-artifact@v4
         with:

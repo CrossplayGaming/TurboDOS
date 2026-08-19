@@ -139,5 +139,6 @@ instead of overflowing, and `dvh` keeps it correct as a mobile URL bar shows and
 hides. Safe-area insets are consumed so a notch cannot sit over the masthead.
 
 Packaging: **PWA** (manifest + service worker, portrait, standalone, offline),
-**Capacitor** for the Android APK, Tauri for desktop. See `BUILDING.md` — note
-the APK has not been compiled or run yet.
+**Capacitor** for the Android APK, Tauri for desktop. See `BUILDING.md`. The APK builds
+in CI and is checked to contain the game payload; it has not yet been run on a
+device.
