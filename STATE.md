@@ -46,19 +46,17 @@ a `meta` table** (36 of them), not a numbered schema version — each fix insert
 
 1. ~~Ship 0.3.3.~~ **Done 2026-08-19** —
    https://github.com/CrossplayGaming/TurboDOS/releases/tag/v0.3.3
-2. **`HANDOFF.md` is badly stale** (dated 2026-06-23). It still calls the app DOSDECK and
-   says "6 pre-seeded games" when there are 50. Its *Known Issues* and *Critical Technical
-   Details* sections are still largely accurate and worth keeping; the inventory sections
-   are not. Either rewrite or delete.
+2. ~~`HANDOFF.md` is badly stale.~~ **Rewritten 2026-08-19** against the code at `9a7fd04`
+   — every claim re-verified against source. It is now the accurate architecture doc
+   (launch pipeline, per-engine handling, both controller paths, migration mechanism).
 3. **Retrofit QA pass never done for TurboDOS** — it's one of the 3 projects left in the
    portfolio sweep (with WolfDoom and TURBOSTEIN). No build-blueprint, no code-audit.
-4. **Carried-over known issues** (from HANDOFF.md, all still unfixed in the source):
-   - `downloadArt` builds the art path as `` `${dir}art` `` with no separator —
-     likely a real path bug (`src/launcher.js`).
-   - No guard against double-clicking Play launching two DOSBox instances.
-   - `verified` never auto-flips when a game runs successfully.
-   - Controller button capture missing from the wizard (keyboard only).
-   - `dosbox_config` exists per-game in the DB but has no UI editor.
+4. **Carried-over known issues** — the full verified list now lives in `HANDOFF.md`.
+   Two items the old doc listed turned out to be **already fixed**: the `downloadArt`
+   path-join bug (art downloads through Rust now) and the double-launch race (there is a
+   reentrancy guard at `main.js:1308`). Still open: `verified` never auto-flips,
+   `dosbox_config` has no UI editor, wizard controller capture is missing, and
+   `GAMES/HOW_TO_ADD_GAMES.txt` still says DOSDECK.
 5. **Phase 2 (eXoDOS bulk import, ~2000 games) still untouched** — Phase 1 target was
    50–150 games and engine formalization; we're at 50.
 
