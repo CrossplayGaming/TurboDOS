@@ -3,3 +3,7 @@ src-tauri/target/
 node_modules/
 dist/
 *.log
+
+# Local build artifacts / personal shortcuts
+*_x64-setup.exe
+*.lnk
