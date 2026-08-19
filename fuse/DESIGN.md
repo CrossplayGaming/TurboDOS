@@ -86,14 +86,52 @@ in-game, and is the skill ceiling the design hangs on.
 - Spawn positions are uniform over empty cells. Biasing them toward existing
   clusters would raise chain depth.
 
+## Presentation
+
+The look is demolition-crew instrumentation: a machined bezel with registration
+ticks, a blueprint plate under the charges, and stamped numerals on bevelled
+plates. Two rules keep it from becoming decoration:
+
+- **Cold chrome, warm danger.** Cyan is reserved for the interface (score,
+  cursor, readouts); every warm hue belongs to the heat ramp or to a hazard
+  signal. The two never trade places, so warmth on screen always means time
+  running out.
+- **Structure encodes state.** The hazard chevron band across the bezel is dark
+  until free space drops to 6 cells, then it lights and crawls. Charges at fuse
+  1 and 2 pulse — fast and slow respectively — so urgency reads as motion for
+  players who won't parse six shades of a heat ramp. The ramp itself is data:
+  the numeral is always the primary channel, colour is redundant backup.
+
+Blasts throw a shockwave ring and debris from every charge caught, wave by wave,
+with a screen shake scaled to chain depth. A chain of 4+ waves swaps the score
+plate from cyan to amber, so a jackpot looks different, not just bigger.
+
+## Audio
+
+Synthesised at runtime through Web Audio — no sample files, so the soundtrack
+costs zero download bytes and nothing is decoded at startup. Nodes are built per
+hit and garbage collected.
+
+Each wave of a chain fires its own hit, and the pitch climbs a minor pentatonic
+scale as the blast travels. A deep chain therefore *resolves into a phrase*
+rather than just getting louder — the reward for depth is audible before you
+read the number. Rubble forming is a dull low-passed thud, deliberately
+unpleasant. The context is created lazily on the first tap, because mobile
+browsers refuse to start one outside a user gesture.
+
+Audio can be muted from the masthead and the preference persists.
+
 ## Build
 
 `prototype/index.html` is standalone — no build step, no dependencies, opens
 from the filesystem. The rules engine at the top of the script block is pure and
 has no DOM knowledge, so it lifts out unchanged into the shipping app and can be
-tested headlessly. Rendering is DOM with CSS transitions and **no animation
-loop**: the page is completely idle between taps, which is most of the battery
-story on a phone.
+tested headlessly. Rendering is DOM with CSS transitions plus a canvas particle layer whose
+requestAnimationFrame loop is **started by a detonation and stops itself when
+the last particle dies** — there is no standing render loop. The one thing that
+does animate continuously is the pulse on fuse-1 and fuse-2 charges, which is a
+compositor-driven opacity animation on a handful of cells. Everything honours
+`prefers-reduced-motion`, which also suppresses particles entirely.
 
 Intended packaging: PWA for browser, Capacitor for the Android APK, Tauri for
 desktop.

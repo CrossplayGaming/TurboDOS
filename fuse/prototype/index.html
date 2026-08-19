@@ -3,86 +3,155 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0B0E14">
 <title>FUSE</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&family=Saira+Condensed:wght@600;700&display=swap">
 <style>
 :root{
-  --ground:#0F131A;
-  --panel:#161B24;
-  --line:#232B38;
-  --ink:#E6EBF2;
-  --dim:#78849A;
+  --ground:#0B0E14;
+  --panel:#12171F;
+  --plate:#0E1219;
+  --line:#222B38;
+  --line-hi:#2E3A4B;
+  --ink:#E9EEF5;
+  --dim:#75839A;
   --chrome:#5FD3E0;
-  --rubble:#242A35;
-  --rubble-ink:#495366;
+  --hazard:#E08A2B;
 
-  /* heat ramp: fuse 6 (cold steel) -> fuse 1 (hot) */
-  --f6:#456A8C; --f5:#3F7C79; --f4:#6E7B44; --f3:#A2762E; --f2:#C05A22; --f1:#D53A2A;
+  /* heat ramp — this is data, not decoration: cold steel at 6, hot at 1 */
+  --f6:#3E6486; --f5:#3A7873; --f4:#6B7840; --f3:#A2762E; --f2:#C4581E; --f1:#DA3524;
+  --f6i:#9FC4E2; --f5i:#9BD8D0; --f4i:#0D1108; --f3i:#150E02; --f2i:#1A0A02; --f1i:#1E0402;
 
   --gap:6px;
-  --radius:5px;
+  --radius:4px;
 }
 
 *{box-sizing:border-box;margin:0;padding:0}
 
 body{
-  background:var(--ground);
+  background:
+    /* blueprint rule lines, then a vignette to sink the corners */
+    repeating-linear-gradient(0deg, rgba(95,211,224,.028) 0 1px, transparent 1px 26px),
+    repeating-linear-gradient(90deg, rgba(95,211,224,.028) 0 1px, transparent 1px 26px),
+    radial-gradient(120% 80% at 50% 0%, #131926 0%, var(--ground) 62%);
+  background-color:var(--ground);
   color:var(--ink);
   font-family:"Saira Condensed","Arial Narrow",system-ui,sans-serif;
   min-height:100vh;
   display:flex;
   justify-content:center;
-  padding:16px 16px 24px;
+  padding:16px 16px 28px;
   -webkit-tap-highlight-color:transparent;
   -webkit-user-select:none;user-select:none;
+  overflow-x:hidden;
 }
 
-#app{
-  width:min(100% , 400px);
-  display:flex;
-  flex-direction:column;
-  gap:14px;
-}
+#app{width:min(100%,400px);display:flex;flex-direction:column;gap:13px}
 
-/* ---- header / readouts ---- */
+/* ---------- masthead ---------- */
 .hud{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
-.brand{display:flex;flex-direction:column;gap:2px}
+.brand{display:flex;flex-direction:column;gap:5px;min-width:0}
 .wordmark{
-  font-size:26px;font-weight:700;letter-spacing:.34em;
-  color:var(--ink);line-height:1;
+  font-size:30px;font-weight:700;letter-spacing:.36em;line-height:1;
+  color:var(--ink);
+  text-shadow:0 0 24px rgba(95,211,224,.16);
 }
+.markrule{
+  height:5px;width:118px;border-radius:1px;
+  background:repeating-linear-gradient(115deg,
+    var(--hazard) 0 7px, #12171F 7px 14px);
+  opacity:.85;
+}
+.subrow{display:flex;align-items:center;gap:9px}
 .tagline{
   font-family:"IBM Plex Mono",ui-monospace,monospace;
-  font-size:9.5px;font-weight:500;letter-spacing:.16em;
-  color:var(--dim);text-transform:uppercase;
+  font-size:9px;font-weight:500;letter-spacing:.15em;
+  color:var(--dim);text-transform:uppercase;white-space:nowrap;
 }
-.scores{display:flex;gap:16px;text-align:right}
-.readout{display:flex;flex-direction:column;align-items:flex-end;gap:1px}
+.snd{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:8.5px;font-weight:700;letter-spacing:.13em;
+  color:var(--dim);background:transparent;
+  border:1px solid var(--line);border-radius:3px;
+  padding:3px 6px;cursor:pointer;line-height:1;
+  transition:color .15s, border-color .15s;
+}
+.snd[aria-pressed="true"]{color:var(--chrome);border-color:#2B4A55}
+.snd:focus-visible{outline:2px solid var(--chrome);outline-offset:2px}
+
+.scores{display:flex;gap:15px;text-align:right;flex:none}
+.readout{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
 .readout .label{
   font-family:"IBM Plex Mono",ui-monospace,monospace;
-  font-size:9px;font-weight:600;letter-spacing:.18em;color:var(--dim);
+  font-size:8.5px;font-weight:600;letter-spacing:.2em;color:var(--dim);
 }
 .readout .value{
   font-family:"IBM Plex Mono",ui-monospace,monospace;
   font-variant-numeric:tabular-nums;
-  font-size:28px;font-weight:700;line-height:1;color:var(--chrome);
+  font-size:29px;font-weight:700;line-height:1;color:var(--chrome);
+  text-shadow:0 0 20px rgba(95,211,224,.3);
 }
-.readout.secondary .value{font-size:17px;color:var(--dim);padding-bottom:4px}
+.readout.secondary .value{font-size:16px;color:var(--dim);text-shadow:none;padding-bottom:5px}
+.readout .value.bump{animation:bump .34s ease-out}
+@keyframes bump{0%{transform:scale(1)}30%{transform:scale(1.16)}100%{transform:scale(1)}}
 
-/* ---- board ---- */
+/* ---------- board ---------- */
 .stage{position:relative}
+
+.bezel{
+  position:relative;
+  padding:9px;
+  border-radius:9px;
+  background:linear-gradient(180deg,#1A2130 0%,#0D1119 100%);
+  border:1px solid var(--line);
+  box-shadow:0 18px 44px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.045);
+}
+/* corner registration ticks — instrument-panel vernacular */
+.bezel::before,.bezel::after{
+  content:"";position:absolute;width:13px;height:13px;pointer-events:none;
+  border-color:var(--line-hi);border-style:solid;border-width:0;
+}
+.bezel::before{top:4px;left:4px;border-top-width:1px;border-left-width:1px}
+.bezel::after{bottom:4px;right:4px;border-bottom-width:1px;border-right-width:1px}
+
+/* danger band: lights only when the board is nearly out of room */
+.hazard{
+  position:absolute;left:9px;right:9px;top:0;height:3px;
+  border-radius:0 0 2px 2px;
+  background:repeating-linear-gradient(115deg,
+    var(--hazard) 0 9px, transparent 9px 18px);
+  background-size:25.5px 100%;
+  opacity:0;transition:opacity .4s;pointer-events:none;
+}
+.stage.danger .hazard{opacity:.95;animation:crawl 1.1s linear infinite}
+@keyframes crawl{to{background-position:25.5px 0}}
+.stage.danger .bezel{border-color:#4A3418}
+
 .board{
+  position:relative;
   display:grid;
   grid-template-columns:repeat(5,1fr);
   grid-template-rows:repeat(6,1fr);
   gap:var(--gap);
   aspect-ratio:5/6;
   padding:var(--gap);
-  background:var(--panel);
-  border:1px solid var(--line);
-  border-radius:8px;
+  background:
+    repeating-linear-gradient(0deg, rgba(95,211,224,.03) 0 1px, transparent 1px 14px),
+    repeating-linear-gradient(90deg, rgba(95,211,224,.03) 0 1px, transparent 1px 14px),
+    var(--plate);
+  border:1px solid #1B222E;
+  border-radius:5px;
+  overflow:hidden;
+  will-change:transform;
+}
+
+.fx{
+  position:absolute;inset:0;
+  pointer-events:none;
+  border-radius:5px;
+  z-index:2;
 }
 
 .cell{
@@ -92,150 +161,185 @@ body{
   font-family:"IBM Plex Mono",ui-monospace,monospace;
   font-weight:700;
   font-size:clamp(19px,6.4vw,26px);
-  color:#0C1016;
   background:transparent;
   border:1px solid transparent;
-  transition:transform .13s ease, opacity .13s ease;
+  transition:transform .12s ease;
   cursor:default;
 }
 .cell.empty{
-  background:rgba(255,255,255,.018);
-  border-color:rgba(255,255,255,.03);
+  background:rgba(255,255,255,.014);
+  border-color:rgba(255,255,255,.028);
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.3);
 }
-.cell.live{cursor:pointer;box-shadow:inset 0 -2px 0 rgba(0,0,0,.22)}
-.cell.f6{background:var(--f6);color:#DCE8F2}
-.cell.f5{background:var(--f5);color:#DFF0EE}
-.cell.f4{background:var(--f4);color:#0E1208}
-.cell.f3{background:var(--f3);color:#150E02}
-.cell.f2{background:var(--f2);color:#1A0B03}
-.cell.f1{background:var(--f1);color:#1C0503}
+
+/* machined charge plate: light from above, shadow below, stamped numeral */
+.cell.live{
+  cursor:pointer;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.22),
+    inset 0 -3px 0 rgba(0,0,0,.28),
+    0 2px 5px rgba(0,0,0,.35);
+  text-shadow:0 1px 0 rgba(255,255,255,.14);
+}
+.cell.live::before{
+  content:"";position:absolute;inset:3px;border-radius:2px;
+  border:1px solid rgba(255,255,255,.07);pointer-events:none;
+}
+.cell.f6{background:var(--f6);color:var(--f6i)}
+.cell.f5{background:var(--f5);color:var(--f5i)}
+.cell.f4{background:var(--f4);color:var(--f4i)}
+.cell.f3{background:var(--f3);color:var(--f3i)}
+.cell.f2{background:var(--f2);color:var(--f2i)}
+.cell.f1{background:var(--f1);color:var(--f1i)}
+
+/* urgency reads as motion, not just hue — last-chance charges breathe */
+.cell.f1::after,.cell.f2::after{
+  content:"";position:absolute;inset:0;border-radius:var(--radius);
+  background:radial-gradient(circle at 50% 50%, rgba(255,214,170,.5), transparent 68%);
+  opacity:0;pointer-events:none;
+}
+.cell.f1::after{animation:breathe .78s ease-in-out infinite}
+.cell.f2::after{animation:breathe 1.7s ease-in-out infinite}
+@keyframes breathe{0%,100%{opacity:0}50%{opacity:.62}}
 
 .cell.rubble{
   background:
-    repeating-linear-gradient(45deg,
-      var(--rubble) 0 4px, #1C222C 4px 8px);
-  color:var(--rubble-ink);
-  border-color:#2C3442;
-  font-size:clamp(13px,4.4vw,17px);
+    repeating-linear-gradient(45deg, #1D232E 0 3px, #141922 3px 6px);
+  color:#3F4959;
+  border-color:#28313E;
+  box-shadow:inset 0 2px 5px rgba(0,0,0,.55);
+  font-size:clamp(12px,4vw,16px);
+  text-shadow:none;
 }
 
-/* fresh spawn */
-.cell.spawned{animation:drop .22s ease-out}
-@keyframes drop{from{transform:scale(.62);opacity:0}to{transform:scale(1);opacity:1}}
+.cell.spawned{animation:drop .26s cubic-bezier(.2,1.5,.4,1)}
+@keyframes drop{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
 
-/* detonation */
 .cell.blast{
-  animation:blast .3s ease-out forwards;
+  animation:blast .34s ease-out forwards;
   animation-delay:var(--d,0ms);
-  z-index:2;
+  z-index:3;
 }
 @keyframes blast{
   0%{transform:scale(1)}
-  38%{transform:scale(1.22);filter:brightness(2.1)}
-  100%{transform:scale(.3);opacity:0;filter:brightness(2.6)}
+  30%{transform:scale(1.26);filter:brightness(2.6) saturate(1.4)}
+  100%{transform:scale(.28);opacity:0;filter:brightness(3)}
 }
 
-/* new rubble */
-.cell.turned{animation:turn .3s ease-out}
+.cell.turned{animation:turn .42s ease-out}
 @keyframes turn{
-  0%{transform:scale(1.1);filter:brightness(2.2)}
+  0%{transform:scale(1.14);filter:brightness(2.4)}
+  55%{transform:scale(.94)}
   100%{transform:scale(1);filter:none}
 }
 
-.cell.cursor{outline:2px solid var(--chrome);outline-offset:2px}
+.cell.cursor{outline:2px solid var(--chrome);outline-offset:2px;z-index:2}
 .cell:focus-visible{outline:2px solid var(--chrome);outline-offset:2px}
 
-/* floating score readout — sits on its own plate so it never competes
-   with the numerals underneath it */
+/* ---------- blast readout ---------- */
 .pop{
   position:absolute;left:50%;top:40%;
   transform:translate(-50%,-50%);
   font-family:"IBM Plex Mono",ui-monospace,monospace;
   font-weight:700;font-size:38px;line-height:1;
   color:var(--chrome);
-  background:rgba(11,14,19,.94);
-  border:1px solid var(--line);
-  border-radius:6px;
+  background:rgba(9,12,17,.95);
+  border:1px solid var(--line-hi);
+  border-radius:5px;
   padding:12px 22px 11px;
   text-align:center;
-  box-shadow:0 10px 34px rgba(0,0,0,.5);
+  box-shadow:0 12px 40px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.06);
   pointer-events:none;
-  animation:pop .85s ease-out forwards;
-  z-index:3;
+  animation:pop .9s ease-out forwards;
+  z-index:4;
   font-variant-numeric:tabular-nums;
   white-space:nowrap;
 }
-.pop .mult{display:block;font-size:12px;font-weight:600;letter-spacing:.16em;
-  color:var(--ink);opacity:.7;margin-top:5px}
+.pop.big{color:#FFD9A0;border-color:#5A3F1C;box-shadow:0 12px 46px rgba(224,138,43,.3), inset 0 1px 0 rgba(255,255,255,.08)}
+.pop .mult{display:block;font-size:11.5px;font-weight:600;letter-spacing:.17em;
+  color:var(--ink);opacity:.72;margin-top:6px}
 @keyframes pop{
-  0%{opacity:0;transform:translate(-50%,-30%) scale(.8)}
-  18%{opacity:1;transform:translate(-50%,-50%) scale(1)}
-  75%{opacity:1}
-  100%{opacity:0;transform:translate(-50%,-88%) scale(1)}
+  0%{opacity:0;transform:translate(-50%,-28%) scale(.78)}
+  16%{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  74%{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  100%{opacity:0;transform:translate(-50%,-96%) scale(.98)}
 }
 
-/* ---- status strip ---- */
+/* ---------- telemetry strip ---------- */
 .strip{
-  display:flex;justify-content:space-between;gap:8px;
+  display:flex;justify-content:space-between;gap:6px;
   font-family:"IBM Plex Mono",ui-monospace,monospace;
-  font-size:10.5px;font-weight:600;letter-spacing:.1em;
+  font-size:10px;font-weight:600;letter-spacing:.09em;
   color:var(--dim);
   border-top:1px solid var(--line);
   padding-top:9px;
 }
-.strip b{color:var(--ink);font-weight:600}
-.strip .warn b{color:var(--f2)}
+.strip b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+.strip .warn b{color:var(--hazard)}
+.strip .room.low b{color:var(--f2)}
 
 .hint{
   font-family:"IBM Plex Mono",ui-monospace,monospace;
-  font-size:10.5px;line-height:1.65;color:var(--dim);
+  font-size:10.5px;line-height:1.7;color:var(--dim);
   border-left:2px solid var(--line);
-  padding-left:10px;
+  padding-left:11px;
 }
 .hint b{color:var(--ink);font-weight:600}
 
-/* ---- game over ---- */
+/* ---------- run summary ---------- */
 .over{
   position:absolute;inset:0;
-  background:rgba(12,15,21,.975);
-  border-radius:8px;
+  background:rgba(9,12,18,.975);
+  border-radius:9px;
   display:flex;flex-direction:column;
-  align-items:center;justify-content:center;gap:5px;
-  padding:20px;
+  align-items:center;justify-content:center;gap:4px;
+  padding:22px;
   cursor:pointer;
-  animation:fade .3s ease-out;
-  z-index:4;
+  animation:fade .35s ease-out;
+  z-index:6;
 }
 @keyframes fade{from{opacity:0}to{opacity:1}}
+.over .band{
+  width:74px;height:5px;margin-bottom:12px;border-radius:1px;
+  background:repeating-linear-gradient(115deg, var(--hazard) 0 7px, transparent 7px 14px);
+}
 .over .dead{
-  font-size:11px;letter-spacing:.16em;font-weight:700;
-  color:var(--f2);text-transform:uppercase;
-  text-align:center;text-wrap:balance;line-height:1.5;
-  margin-bottom:4px;
+  font-size:11px;letter-spacing:.17em;font-weight:700;
+  color:var(--hazard);text-transform:uppercase;
+  text-align:center;text-wrap:balance;line-height:1.5;margin-bottom:6px;
 }
 .over .final{
   font-family:"IBM Plex Mono",ui-monospace,monospace;
-  font-size:60px;font-weight:700;line-height:1;color:var(--chrome);
+  font-size:62px;font-weight:700;line-height:1;color:var(--chrome);
   font-variant-numeric:tabular-nums;
+  text-shadow:0 0 34px rgba(95,211,224,.32);
+}
+.over .newbest{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:9.5px;font-weight:700;letter-spacing:.22em;color:var(--hazard);
+  margin-top:6px;
 }
 .over .stats{
   font-family:"IBM Plex Mono",ui-monospace,monospace;
-  font-size:11px;letter-spacing:.1em;color:var(--dim);text-align:center;line-height:1.8;
+  font-size:10.5px;letter-spacing:.1em;color:var(--dim);text-align:center;line-height:1.95;
+  margin-top:10px;
 }
-.over .stats b{color:var(--ink);font-weight:600}
+.over .stats b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
 .over .again{
-  margin-top:14px;
+  margin-top:18px;
   font-family:"IBM Plex Mono",ui-monospace,monospace;
-  font-size:11px;font-weight:600;letter-spacing:.22em;
+  font-size:10.5px;font-weight:700;letter-spacing:.22em;
   color:var(--ink);
-  border:1px solid var(--line);
+  border:1px solid var(--line-hi);
   border-radius:4px;
-  padding:9px 20px;
+  padding:10px 22px;
+  background:rgba(255,255,255,.03);
 }
 
 @media (prefers-reduced-motion:reduce){
-  .cell,.pop,.over{animation:none!important;transition:none!important}
+  .cell,.pop,.over,.readout .value,.stage.danger .hazard{animation:none!important;transition:none!important}
   .cell.blast{opacity:0}
+  .cell.f1::after,.cell.f2::after{opacity:.34;animation:none}
 }
 </style>
 </head>
@@ -244,7 +348,11 @@ body{
   <div class="hud">
     <div class="brand">
       <div class="wordmark">FUSE</div>
-      <div class="tagline">Detonate before it decays</div>
+      <div class="markrule"></div>
+      <div class="subrow">
+        <span class="tagline">Detonate before it decays</span>
+        <button class="snd" id="snd" type="button" aria-pressed="true">AUDIO</button>
+      </div>
     </div>
     <div class="scores">
       <div class="readout secondary">
@@ -258,19 +366,24 @@ body{
     </div>
   </div>
 
-  <div class="stage">
-    <div class="board" id="board" role="grid" aria-label="Fuse board"></div>
+  <div class="stage" id="stage">
+    <div class="bezel">
+      <div class="hazard"></div>
+      <div class="board" id="board" role="grid" aria-label="Fuse board">
+        <canvas class="fx" id="fx" aria-hidden="true"></canvas>
+      </div>
+    </div>
   </div>
 
   <div class="strip">
     <span>TURN <b id="turn">1</b></span>
-    <span>SPAWN <b id="rate">×3</b></span>
-    <span class="warn">FUSE <b id="range">4–6</b></span>
-    <span>ROOM <b id="room">30</b></span>
+    <span>SPAWN <b id="rate">&times;3</b></span>
+    <span class="warn">FUSE <b id="range">4&ndash;6</b></span>
+    <span class="room" id="roomWrap">ROOM <b id="room">30</b></span>
   </div>
 
   <p class="hint">
-    Tap a charge to detonate it. Its fuse is also its <b>blast reach</b> — a 5 carries five
+    Tap a charge to detonate it. Its fuse is also its <b>blast reach</b> &mdash; a 5 carries five
     waves through touching charges, a 1 only kills itself. Score is the fuses caught
     <b>&times; waves&sup2;</b>, so depth beats value: tap the <b>tip</b> of a cluster, never the middle.
     Every turn all fuses drop by one. A charge that hits <b>0</b> is rubble, permanently.
@@ -419,22 +532,232 @@ function play(g, tapIndex){
 }
 
 /* ------------------------------------------------------------------
-   Renderer — DOM only, no animation loop. The page is completely idle
-   between taps, which is most of the battery story on a phone.
+   Audio — synthesised at runtime through Web Audio. No sample files,
+   so the whole soundtrack costs zero bytes of download and nothing is
+   decoded at startup. Nodes are built per hit and garbage collected,
+   and the context is only created on the first real tap because mobile
+   browsers refuse to start one outside a user gesture.
 ------------------------------------------------------------------ */
 
+const Sound = (function(){
+  /* minor pentatonic — a chain walks up it, so deeper chains literally
+     resolve into a bigger, higher phrase rather than just a louder bang */
+  const STEPS = [0, 3, 5, 7, 10, 12, 15, 17, 19, 22];
+  const ROOT = 165;
+
+  let ctx = null, master = null, noiseBuf = null;
+  let enabled = true;
+  try { enabled = localStorage.getItem("fuse.audio") !== "0"; } catch (e) {}
+
+  function ensure(){
+    if (!enabled) return null;
+    if (!ctx){
+      const Ctor = window.AudioContext || window.webkitAudioContext;
+      if (!Ctor) return null;
+      try { ctx = new Ctor(); } catch (e) { return null; }
+      master = ctx.createGain();
+      master.gain.value = 0.5;
+      master.connect(ctx.destination);
+      const len = Math.floor(ctx.sampleRate * 0.5);
+      noiseBuf = ctx.createBuffer(1, len, ctx.sampleRate);
+      const data = noiseBuf.getChannelData(0);
+      for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+    }
+    if (ctx.state === "suspended") ctx.resume();
+    return ctx;
+  }
+
+  function tone(o){
+    const c = ensure(); if (!c) return;
+    const t0 = c.currentTime + (o.delay || 0);
+    const osc = c.createOscillator();
+    osc.type = o.type || "sine";
+    osc.frequency.setValueAtTime(o.freq, t0);
+    if (o.to) osc.frequency.exponentialRampToValueAtTime(Math.max(20, o.to), t0 + o.dur);
+    const g = c.createGain();
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(Math.max(0.0002, o.gain), t0 + (o.attack || 0.006));
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + o.dur);
+    osc.connect(g); g.connect(master);
+    osc.start(t0); osc.stop(t0 + o.dur + 0.04);
+  }
+
+  function hiss(o){
+    const c = ensure(); if (!c) return;
+    const t0 = c.currentTime + (o.delay || 0);
+    const src = c.createBufferSource();
+    src.buffer = noiseBuf;
+    const filt = c.createBiquadFilter();
+    filt.type = o.filter || "lowpass";
+    filt.frequency.setValueAtTime(o.cut, t0);
+    if (o.cutTo) filt.frequency.exponentialRampToValueAtTime(Math.max(60, o.cutTo), t0 + o.dur);
+    const g = c.createGain();
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(Math.max(0.0002, o.gain), t0 + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + o.dur);
+    src.connect(filt); filt.connect(g); g.connect(master);
+    src.start(t0); src.stop(t0 + o.dur + 0.04);
+  }
+
+  return {
+    get enabled(){ return enabled; },
+    unlock: function(){ ensure(); },
+    toggle: function(){
+      enabled = !enabled;
+      try { localStorage.setItem("fuse.audio", enabled ? "1" : "0"); } catch (e) {}
+      if (!enabled && ctx && ctx.state === "running") ctx.suspend();
+      else if (enabled) ensure();
+      return enabled;
+    },
+    /* one hit per wave, climbing the scale as the chain travels */
+    blast: function(wave, delay){
+      const note = ROOT * Math.pow(2, STEPS[Math.min(wave, STEPS.length - 1)] / 12);
+      tone({ freq: note, dur: 0.26, type: "triangle", gain: 0.15 + wave * 0.018, delay: delay });
+      tone({ freq: note / 2, dur: 0.17, type: "sine", gain: 0.13, delay: delay });
+      hiss({ cut: 2800, cutTo: 380, dur: 0.19, gain: 0.09, delay: delay });
+    },
+    rubble: function(delay){
+      tone({ freq: 118, to: 44, dur: 0.34, type: "sine", gain: 0.13, delay: delay });
+      hiss({ cut: 700, cutTo: 170, dur: 0.3, gain: 0.085, delay: delay });
+    },
+    drop: function(delay){
+      tone({ freq: 1320, dur: 0.045, type: "square", gain: 0.016, delay: delay });
+    },
+    over: function(){
+      tone({ freq: 300, to: 46, dur: 1.15, type: "sawtooth", gain: 0.17 });
+      hiss({ cut: 1700, cutTo: 110, dur: 1.25, gain: 0.11 });
+    },
+    fanfare: function(){
+      [0, 4, 7, 12].forEach(function(s, k){
+        tone({ freq: 330 * Math.pow(2, s / 12), dur: 0.34, type: "triangle",
+               gain: 0.12, delay: 0.06 * k });
+      });
+    }
+  };
+})();
+
+/* ------------------------------------------------------------------
+   Particle layer — canvas, and deliberately not a standing render loop.
+   The RAF is started by a detonation and stops itself the moment the
+   last particle dies, so an untouched board costs nothing.
+------------------------------------------------------------------ */
+
+const HEAT = ["#DA3524", "#DA3524", "#C4581E", "#A2762E", "#6B7840", "#3A7873", "#3E6486"];
+const REDUCED = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+const fxCanvas = document.getElementById("fx");
+const fxCtx = fxCanvas.getContext("2d");
 const boardEl = document.getElementById("board");
+
+let parts = [], rings = [], shake = 0, rafId = 0, lastFrame = 0;
+
+function sizeFx(){
+  const r = boardEl.getBoundingClientRect();
+  if (!r.width) return;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  fxCanvas.width = Math.round(r.width * dpr);
+  fxCanvas.height = Math.round(r.height * dpr);
+  fxCanvas.style.width = r.width + "px";
+  fxCanvas.style.height = r.height + "px";
+  fxCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+if (window.ResizeObserver) new ResizeObserver(sizeFx).observe(boardEl);
+else window.addEventListener("resize", sizeFx);
+
+function cellCentre(i){
+  const c = CELLS[i].getBoundingClientRect();
+  const b = boardEl.getBoundingClientRect();
+  return { x: c.left - b.left + c.width / 2, y: c.top - b.top + c.height / 2, s: c.width };
+}
+
+function burst(pt, colour, power){
+  if (REDUCED) return;
+  rings.push({ x: pt.x, y: pt.y, r: pt.s * 0.3, vr: pt.s * 3.4, life: 0, max: 0.42, colour: colour });
+  const n = 7 + Math.round(power * 2);
+  for (let k = 0; k < n; k++){
+    const a = Math.random() * Math.PI * 2;
+    const sp = (46 + Math.random() * 128) * (0.7 + power * 0.12);
+    parts.push({
+      x: pt.x, y: pt.y,
+      vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
+      life: 0, max: 0.4 + Math.random() * 0.4,
+      size: 1.4 + Math.random() * 2.4,
+      colour: colour
+    });
+  }
+  if (parts.length > 220) parts.splice(0, parts.length - 220);
+  start();
+}
+
+function start(){
+  if (rafId) return;
+  lastFrame = performance.now();
+  rafId = requestAnimationFrame(frame);
+}
+
+function frame(now){
+  const dt = Math.min(0.05, (now - lastFrame) / 1000);
+  lastFrame = now;
+  fxCtx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
+
+  for (let i = rings.length - 1; i >= 0; i--){
+    const r = rings[i];
+    r.life += dt; r.r += r.vr * dt;
+    const t = r.life / r.max;
+    if (t >= 1){ rings.splice(i, 1); continue; }
+    fxCtx.globalAlpha = (1 - t) * 0.55;
+    fxCtx.strokeStyle = r.colour;
+    fxCtx.lineWidth = 2.4 * (1 - t) + 0.6;
+    fxCtx.beginPath();
+    fxCtx.arc(r.x, r.y, r.r, 0, Math.PI * 2);
+    fxCtx.stroke();
+  }
+
+  for (let i = parts.length - 1; i >= 0; i--){
+    const p = parts[i];
+    p.life += dt;
+    const t = p.life / p.max;
+    if (t >= 1){ parts.splice(i, 1); continue; }
+    p.x += p.vx * dt; p.y += p.vy * dt;
+    p.vx *= 0.955; p.vy *= 0.955;
+    fxCtx.globalAlpha = 1 - t;
+    fxCtx.fillStyle = p.colour;
+    const s = p.size * (1 - t * 0.55);
+    fxCtx.fillRect(p.x - s / 2, p.y - s / 2, s, s);
+  }
+  fxCtx.globalAlpha = 1;
+
+  if (shake > 0.15){
+    shake *= 0.86;
+    boardEl.style.transform =
+      "translate(" + ((Math.random() - 0.5) * shake).toFixed(2) + "px," +
+                     ((Math.random() - 0.5) * shake).toFixed(2) + "px)";
+  } else if (shake){
+    shake = 0;
+    boardEl.style.transform = "";
+  }
+
+  if (parts.length || rings.length || shake) rafId = requestAnimationFrame(frame);
+  else rafId = 0;
+}
+
+/* ------------------------------------------------------------------
+   Renderer
+------------------------------------------------------------------ */
+
 const scoreEl = document.getElementById("score");
 const bestEl  = document.getElementById("best");
 const turnEl  = document.getElementById("turn");
 const rateEl  = document.getElementById("rate");
 const rangeEl = document.getElementById("range");
 const roomEl  = document.getElementById("room");
-const stageEl = document.querySelector(".stage");
+const roomWrap = document.getElementById("roomWrap");
+const stageEl = document.getElementById("stage");
+const sndBtn  = document.getElementById("snd");
 
-const WAVE_MS = 62;      // stagger between chain waves
+const WAVE_MS = 62;
 const CELLS = [];
-let game, busy = false, cursor = 12, overlay = null;
+let game, busy = false, cursor = 12, overlay = null, beatBest = false;
 
 let best = 0;
 try { best = parseInt(localStorage.getItem("fuse.best") || "0", 10) || 0; } catch (e) {}
@@ -463,70 +786,94 @@ function paint(opts){
     el.className = cls;
     el.style.removeProperty("--d");
   }
+  const room = emptyCells(game).length;
   scoreEl.textContent = game.score;
   bestEl.textContent = best;
   turnEl.textContent = game.turn;
   rateEl.textContent = "×" + spawnRate(game.turn);
   rangeEl.textContent = fuseLow(game.turn) + "–" + fuseHigh(game.turn);
-  roomEl.textContent = emptyCells(game).length;
+  roomEl.textContent = room;
+  roomWrap.classList.toggle("low", room <= 6);
+  stageEl.classList.toggle("danger", room <= 6 && !game.over);
 }
 
-function showPop(gained, multiplier){
+function showPop(gained, waves){
   const el = document.createElement("div");
-  el.className = "pop";
-  el.innerHTML = "+" + gained + (multiplier > 1
-    ? '<span class="mult">' + multiplier + " WAVES &times;" + (multiplier * multiplier) + "</span>"
+  el.className = "pop" + (waves >= 4 ? " big" : "");
+  el.innerHTML = "+" + gained + (waves > 1
+    ? '<span class="mult">' + waves + " WAVES &times;" + (waves * waves) + "</span>"
     : "");
   stageEl.appendChild(el);
-  setTimeout(function(){ el.remove(); }, 900);
+  setTimeout(function(){ el.remove(); }, 940);
 }
 
-function buzz(ms){
-  try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {}
+function buzz(pattern){
+  try { if (navigator.vibrate) navigator.vibrate(pattern); } catch (e) {}
 }
 
 function tap(index){
   if (busy || game.over || !(game.cells[index] > 0)) return;
   busy = true;
   cursor = index;
+  Sound.unlock();
 
   const snapshot = game.cells.slice();
   const result = play(game, index);
   const waveCount = result.waves.length;
 
-  // animate the blast off the pre-turn snapshot, then commit
   result.waves.forEach(function(wave, w){
+    const delayMs = w * WAVE_MS;
     wave.forEach(function(i){
       const el = CELLS[i], v = snapshot[i];
       el.className = "cell live f" + v + " blast";
       el.textContent = v;
-      el.style.setProperty("--d", (w * WAVE_MS) + "ms");
+      el.style.setProperty("--d", delayMs + "ms");
     });
+    Sound.blast(w, delayMs / 1000);
+    const centres = wave.map(cellCentre);
+    setTimeout(function(){
+      centres.forEach(function(pt, k){ burst(pt, HEAT[snapshot[wave[k]]] || HEAT[0], w + 1); });
+      shake = Math.max(shake, 2.2 + w * 1.5);
+      start();
+    }, delayMs);
   });
 
-  buzz(waveCount > 2 ? [8, 28, 16] : 8);
+  buzz(waveCount > 2 ? [8, 26, 14, 26, 20] : 9);
   if (result.gained > 0) showPop(result.gained, waveCount);
 
-  const settle = waveCount * WAVE_MS + 300;
+  const settle = waveCount * WAVE_MS + 320;
   setTimeout(function(){
     if (game.score > best){
-      best = game.score;
+      best = game.score; beatBest = true;
       try { localStorage.setItem("fuse.best", String(best)); } catch (e) {}
     }
     paint(result);
+    scoreEl.classList.remove("bump");
+    void scoreEl.offsetWidth;
+    scoreEl.classList.add("bump");
+
+    if (result.turned.length) Sound.rubble(0);
+    result.spawned.forEach(function(_, k){ Sound.drop(0.05 + k * 0.045); });
+
     if (game.over) showGameOver();
     busy = false;
   }, settle);
 }
 
 function showGameOver(){
-  buzz([26, 60, 26, 60, 90]);
+  stageEl.classList.remove("danger");
   stageEl.querySelectorAll(".pop").forEach(function(el){ el.remove(); });
+  buzz([26, 60, 26, 60, 90]);
+  Sound.over();
+  if (beatBest) setTimeout(function(){ Sound.fanfare(); }, 700);
+
   overlay = document.createElement("div");
   overlay.className = "over";
   overlay.innerHTML =
+    '<div class="band"></div>' +
     '<div class="dead">No room for the next charges</div>' +
     '<div class="final">' + game.score + "</div>" +
+    (beatBest ? '<div class="newbest">NEW BEST</div>' : "") +
     '<div class="stats">SURVIVED <b>' + (game.turn - 1) + '</b> TURNS<br>' +
     'DEEPEST CHAIN <b>' + game.bestChain + '</b> WAVES<br>' +
     'BEST <b>' + best + "</b></div>" +
@@ -537,9 +884,13 @@ function showGameOver(){
 
 function restart(){
   if (overlay){ overlay.remove(); overlay = null; }
+  parts.length = 0; rings.length = 0; shake = 0;
+  boardEl.style.transform = "";
+  if (fxCanvas.width) fxCtx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
   game = newGame((Math.random() * 0xFFFFFFFF) >>> 0);
-  cursor = 12;
+  cursor = firstCharge();
   busy = false;
+  beatBest = false;
   paint({ spawned: [] });
 }
 
@@ -548,19 +899,44 @@ boardEl.addEventListener("click", function(e){
   if (cell) tap(parseInt(cell.dataset.i, 10));
 });
 
-/* desktop: arrows move the cursor, space/enter detonates, R restarts */
+sndBtn.addEventListener("click", function(){
+  const on = Sound.toggle();
+  sndBtn.setAttribute("aria-pressed", on ? "true" : "false");
+  if (on) Sound.drop(0);
+});
+sndBtn.setAttribute("aria-pressed", Sound.enabled ? "true" : "false");
+
+/* Boards are sparse, so stepping one empty cell at a time makes the keyboard
+   path tedious. Arrows jump to the next actual charge in that direction, and
+   fall back to a single step when the lane is empty. */
+function seek(from, dx, dy){
+  let x = (from % W) + dx, y = ((from / W) | 0) + dy;
+  let first = -1;
+  while (x >= 0 && x < W && y >= 0 && y < H){
+    const i = y * W + x;
+    if (first < 0) first = i;
+    if (game.cells[i] > 0) return i;
+    x += dx; y += dy;
+  }
+  return first < 0 ? from : first;
+}
+
+function firstCharge(){
+  for (let i = 0; i < N; i++) if (game.cells[i] > 0) return i;
+  return 12;
+}
+
 document.addEventListener("keydown", function(e){
   if (game.over){
     if (e.key === " " || e.key === "Enter" || e.key.toLowerCase() === "r"){ e.preventDefault(); restart(); }
     return;
   }
-  const x = cursor % W, y = (cursor / W) | 0;
   let moved = true;
   switch (e.key){
-    case "ArrowLeft":  case "a": cursor = y * W + Math.max(0, x - 1); break;
-    case "ArrowRight": case "d": cursor = y * W + Math.min(W - 1, x + 1); break;
-    case "ArrowUp":    case "w": cursor = Math.max(0, y - 1) * W + x; break;
-    case "ArrowDown":  case "s": cursor = Math.min(H - 1, y + 1) * W + x; break;
+    case "ArrowLeft":  case "a": cursor = seek(cursor, -1, 0); break;
+    case "ArrowRight": case "d": cursor = seek(cursor,  1, 0); break;
+    case "ArrowUp":    case "w": cursor = seek(cursor,  0, -1); break;
+    case "ArrowDown":  case "s": cursor = seek(cursor,  0,  1); break;
     case " ": case "Enter": e.preventDefault(); tap(cursor); return;
     case "r": case "R": restart(); return;
     default: moved = false;
@@ -571,7 +947,13 @@ document.addEventListener("keydown", function(e){
   }
 });
 
+/* a backgrounded tab should not keep an audio context alive */
+document.addEventListener("visibilitychange", function(){
+  if (document.hidden && rafId){ cancelAnimationFrame(rafId); rafId = 0; }
+});
+
 restart();
+sizeFx();
 </script>
 </body>
 </html>
