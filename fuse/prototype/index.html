@@ -1,0 +1,577 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FUSE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&family=Saira+Condensed:wght@600;700&display=swap">
+<style>
+:root{
+  --ground:#0F131A;
+  --panel:#161B24;
+  --line:#232B38;
+  --ink:#E6EBF2;
+  --dim:#78849A;
+  --chrome:#5FD3E0;
+  --rubble:#242A35;
+  --rubble-ink:#495366;
+
+  /* heat ramp: fuse 6 (cold steel) -> fuse 1 (hot) */
+  --f6:#456A8C; --f5:#3F7C79; --f4:#6E7B44; --f3:#A2762E; --f2:#C05A22; --f1:#D53A2A;
+
+  --gap:6px;
+  --radius:5px;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+
+body{
+  background:var(--ground);
+  color:var(--ink);
+  font-family:"Saira Condensed","Arial Narrow",system-ui,sans-serif;
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  padding:16px 16px 24px;
+  -webkit-tap-highlight-color:transparent;
+  -webkit-user-select:none;user-select:none;
+}
+
+#app{
+  width:min(100% , 400px);
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+
+/* ---- header / readouts ---- */
+.hud{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+.brand{display:flex;flex-direction:column;gap:2px}
+.wordmark{
+  font-size:26px;font-weight:700;letter-spacing:.34em;
+  color:var(--ink);line-height:1;
+}
+.tagline{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:9.5px;font-weight:500;letter-spacing:.16em;
+  color:var(--dim);text-transform:uppercase;
+}
+.scores{display:flex;gap:16px;text-align:right}
+.readout{display:flex;flex-direction:column;align-items:flex-end;gap:1px}
+.readout .label{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:9px;font-weight:600;letter-spacing:.18em;color:var(--dim);
+}
+.readout .value{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-variant-numeric:tabular-nums;
+  font-size:28px;font-weight:700;line-height:1;color:var(--chrome);
+}
+.readout.secondary .value{font-size:17px;color:var(--dim);padding-bottom:4px}
+
+/* ---- board ---- */
+.stage{position:relative}
+.board{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  grid-template-rows:repeat(6,1fr);
+  gap:var(--gap);
+  aspect-ratio:5/6;
+  padding:var(--gap);
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:8px;
+}
+
+.cell{
+  position:relative;
+  border-radius:var(--radius);
+  display:flex;align-items:center;justify-content:center;
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-weight:700;
+  font-size:clamp(19px,6.4vw,26px);
+  color:#0C1016;
+  background:transparent;
+  border:1px solid transparent;
+  transition:transform .13s ease, opacity .13s ease;
+  cursor:default;
+}
+.cell.empty{
+  background:rgba(255,255,255,.018);
+  border-color:rgba(255,255,255,.03);
+}
+.cell.live{cursor:pointer;box-shadow:inset 0 -2px 0 rgba(0,0,0,.22)}
+.cell.f6{background:var(--f6);color:#DCE8F2}
+.cell.f5{background:var(--f5);color:#DFF0EE}
+.cell.f4{background:var(--f4);color:#0E1208}
+.cell.f3{background:var(--f3);color:#150E02}
+.cell.f2{background:var(--f2);color:#1A0B03}
+.cell.f1{background:var(--f1);color:#1C0503}
+
+.cell.rubble{
+  background:
+    repeating-linear-gradient(45deg,
+      var(--rubble) 0 4px, #1C222C 4px 8px);
+  color:var(--rubble-ink);
+  border-color:#2C3442;
+  font-size:clamp(13px,4.4vw,17px);
+}
+
+/* fresh spawn */
+.cell.spawned{animation:drop .22s ease-out}
+@keyframes drop{from{transform:scale(.62);opacity:0}to{transform:scale(1);opacity:1}}
+
+/* detonation */
+.cell.blast{
+  animation:blast .3s ease-out forwards;
+  animation-delay:var(--d,0ms);
+  z-index:2;
+}
+@keyframes blast{
+  0%{transform:scale(1)}
+  38%{transform:scale(1.22);filter:brightness(2.1)}
+  100%{transform:scale(.3);opacity:0;filter:brightness(2.6)}
+}
+
+/* new rubble */
+.cell.turned{animation:turn .3s ease-out}
+@keyframes turn{
+  0%{transform:scale(1.1);filter:brightness(2.2)}
+  100%{transform:scale(1);filter:none}
+}
+
+.cell.cursor{outline:2px solid var(--chrome);outline-offset:2px}
+.cell:focus-visible{outline:2px solid var(--chrome);outline-offset:2px}
+
+/* floating score readout — sits on its own plate so it never competes
+   with the numerals underneath it */
+.pop{
+  position:absolute;left:50%;top:40%;
+  transform:translate(-50%,-50%);
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-weight:700;font-size:38px;line-height:1;
+  color:var(--chrome);
+  background:rgba(11,14,19,.94);
+  border:1px solid var(--line);
+  border-radius:6px;
+  padding:12px 22px 11px;
+  text-align:center;
+  box-shadow:0 10px 34px rgba(0,0,0,.5);
+  pointer-events:none;
+  animation:pop .85s ease-out forwards;
+  z-index:3;
+  font-variant-numeric:tabular-nums;
+  white-space:nowrap;
+}
+.pop .mult{display:block;font-size:12px;font-weight:600;letter-spacing:.16em;
+  color:var(--ink);opacity:.7;margin-top:5px}
+@keyframes pop{
+  0%{opacity:0;transform:translate(-50%,-30%) scale(.8)}
+  18%{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  75%{opacity:1}
+  100%{opacity:0;transform:translate(-50%,-88%) scale(1)}
+}
+
+/* ---- status strip ---- */
+.strip{
+  display:flex;justify-content:space-between;gap:8px;
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:10.5px;font-weight:600;letter-spacing:.1em;
+  color:var(--dim);
+  border-top:1px solid var(--line);
+  padding-top:9px;
+}
+.strip b{color:var(--ink);font-weight:600}
+.strip .warn b{color:var(--f2)}
+
+.hint{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:10.5px;line-height:1.65;color:var(--dim);
+  border-left:2px solid var(--line);
+  padding-left:10px;
+}
+.hint b{color:var(--ink);font-weight:600}
+
+/* ---- game over ---- */
+.over{
+  position:absolute;inset:0;
+  background:rgba(12,15,21,.975);
+  border-radius:8px;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:5px;
+  padding:20px;
+  cursor:pointer;
+  animation:fade .3s ease-out;
+  z-index:4;
+}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.over .dead{
+  font-size:11px;letter-spacing:.16em;font-weight:700;
+  color:var(--f2);text-transform:uppercase;
+  text-align:center;text-wrap:balance;line-height:1.5;
+  margin-bottom:4px;
+}
+.over .final{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:60px;font-weight:700;line-height:1;color:var(--chrome);
+  font-variant-numeric:tabular-nums;
+}
+.over .stats{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:11px;letter-spacing:.1em;color:var(--dim);text-align:center;line-height:1.8;
+}
+.over .stats b{color:var(--ink);font-weight:600}
+.over .again{
+  margin-top:14px;
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:11px;font-weight:600;letter-spacing:.22em;
+  color:var(--ink);
+  border:1px solid var(--line);
+  border-radius:4px;
+  padding:9px 20px;
+}
+
+@media (prefers-reduced-motion:reduce){
+  .cell,.pop,.over{animation:none!important;transition:none!important}
+  .cell.blast{opacity:0}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="hud">
+    <div class="brand">
+      <div class="wordmark">FUSE</div>
+      <div class="tagline">Detonate before it decays</div>
+    </div>
+    <div class="scores">
+      <div class="readout secondary">
+        <div class="label">BEST</div>
+        <div class="value" id="best">0</div>
+      </div>
+      <div class="readout">
+        <div class="label">SCORE</div>
+        <div class="value" id="score">0</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="board" id="board" role="grid" aria-label="Fuse board"></div>
+  </div>
+
+  <div class="strip">
+    <span>TURN <b id="turn">1</b></span>
+    <span>SPAWN <b id="rate">×3</b></span>
+    <span class="warn">FUSE <b id="range">4–6</b></span>
+    <span>ROOM <b id="room">30</b></span>
+  </div>
+
+  <p class="hint">
+    Tap a charge to detonate it. Its fuse is also its <b>blast reach</b> — a 5 carries five
+    waves through touching charges, a 1 only kills itself. Score is the fuses caught
+    <b>&times; waves&sup2;</b>, so depth beats value: tap the <b>tip</b> of a cluster, never the middle.
+    Every turn all fuses drop by one. A charge that hits <b>0</b> is rubble, permanently.
+    You lose when there's no room to drop the next batch.
+  </p>
+</div>
+
+<script>
+"use strict";
+
+/* ------------------------------------------------------------------
+   FUSE — rules engine
+   Pure, seeded, and deterministic. No rendering knowledge lives here,
+   so the whole thing is testable headlessly and every run is replayable
+   from (seed + tap sequence).
+------------------------------------------------------------------ */
+
+const W = 5, H = 6, N = W * H;
+const EMPTY = 0, RUBBLE = -1;   // any value 1..6 is a live charge
+
+function mulberry32(a){
+  return function(){
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+/** Escalation is a pure function of turn count, so the player can always
+    read why it got harder off the status strip. */
+function spawnRate(turn){ return Math.min(5, 3 + Math.floor(turn / 25)); }
+function fuseHigh(turn){ return Math.max(3, 6 - Math.floor(turn / 18)); }
+function fuseLow(turn){ return Math.max(1, fuseHigh(turn) - 2); }
+
+function neighbors(i){
+  const x = i % W, y = (i / W) | 0, out = [];
+  if (x > 0) out.push(i - 1);
+  if (x < W - 1) out.push(i + 1);
+  if (y > 0) out.push(i - W);
+  if (y < H - 1) out.push(i + W);
+  return out;
+}
+
+function newGame(seed){
+  const rng = mulberry32(seed);
+  const g = {
+    seed,
+    rng,
+    cells: new Array(N).fill(EMPTY),
+    score: 0,
+    turn: 1,
+    bestChain: 0,
+    over: false
+  };
+  // opening board: one spawn's worth, so turn 1 already has something to read
+  fill(g, 6);
+  return g;
+}
+
+function emptyCells(g){
+  const out = [];
+  for (let i = 0; i < N; i++) if (g.cells[i] === EMPTY) out.push(i);
+  return out;
+}
+
+function fill(g, count){
+  const free = emptyCells(g);
+  const placed = [];
+  const lo = fuseLow(g.turn), hi = fuseHigh(g.turn);
+  for (let k = 0; k < count && free.length; k++){
+    const pick = (g.rng() * free.length) | 0;
+    const idx = free.splice(pick, 1)[0];
+    g.cells[idx] = lo + ((g.rng() * (hi - lo + 1)) | 0);
+    placed.push(idx);
+  }
+  return placed;
+}
+
+/** Flood outward from `start` through touching charges, grouped into waves.
+    The charge's own fuse is its blast reach: a fuse of 4 carries four waves
+    and no further. So decay costs you reach as well as points, and the tile
+    that can do the most damage is always the one running out fastest.
+    Wave count is also the score multiplier — hence tapping the tip of a
+    cluster rather than its middle. */
+function chainFrom(cells, start){
+  if (!(cells[start] > 0)) return [];
+  const reach = cells[start];
+  const seen = new Uint8Array(N);
+  seen[start] = 1;
+  const waves = [[start]];
+  let frontier = [start];
+  while (frontier.length && waves.length < reach){
+    const next = [];
+    for (const i of frontier){
+      for (const n of neighbors(i)){
+        if (!seen[n] && cells[n] > 0){ seen[n] = 1; next.push(n); }
+      }
+    }
+    if (next.length) waves.push(next);
+    frontier = next;
+  }
+  return waves;
+}
+
+/** Squared multiplier, deliberately: a linear one makes firing immediately the
+    dominant strategy, which flattens the game. Squaring makes a deep chain worth
+    enough to justify letting your charges decay while a cluster builds. */
+function scoreFor(cells, waves){
+  let sum = 0;
+  for (const wave of waves) for (const i of wave) sum += cells[i];
+  return sum * waves.length * waves.length;
+}
+
+/** One full turn: detonate, decay, drop. Returns everything the renderer
+    needs to animate, and never touches the DOM itself. */
+function play(g, tapIndex){
+  if (g.over || !(g.cells[tapIndex] > 0)) return null;
+
+  const waves = chainFrom(g.cells, tapIndex);
+  const gained = scoreFor(g.cells, waves);
+  const cleared = waves.flat();
+
+  g.score += gained;
+  g.bestChain = Math.max(g.bestChain, waves.length);
+  for (const i of cleared) g.cells[i] = EMPTY;
+
+  // decay — every surviving charge loses a turn of life
+  const turned = [];
+  for (let i = 0; i < N; i++){
+    if (g.cells[i] > 0){
+      g.cells[i] -= 1;
+      if (g.cells[i] === 0){ g.cells[i] = RUBBLE; turned.push(i); }
+    }
+  }
+
+  g.turn += 1;
+
+  // drop — the crew needs room for the whole batch or the run is over
+  const need = spawnRate(g.turn);
+  let spawned = [];
+  if (emptyCells(g).length < need) g.over = true;
+  else spawned = fill(g, need);
+
+  return { waves, gained, cleared, turned, spawned };
+}
+
+/* ------------------------------------------------------------------
+   Renderer — DOM only, no animation loop. The page is completely idle
+   between taps, which is most of the battery story on a phone.
+------------------------------------------------------------------ */
+
+const boardEl = document.getElementById("board");
+const scoreEl = document.getElementById("score");
+const bestEl  = document.getElementById("best");
+const turnEl  = document.getElementById("turn");
+const rateEl  = document.getElementById("rate");
+const rangeEl = document.getElementById("range");
+const roomEl  = document.getElementById("room");
+const stageEl = document.querySelector(".stage");
+
+const WAVE_MS = 62;      // stagger between chain waves
+const CELLS = [];
+let game, busy = false, cursor = 12, overlay = null;
+
+let best = 0;
+try { best = parseInt(localStorage.getItem("fuse.best") || "0", 10) || 0; } catch (e) {}
+
+for (let i = 0; i < N; i++){
+  const el = document.createElement("div");
+  el.className = "cell empty";
+  el.setAttribute("role", "gridcell");
+  el.dataset.i = i;
+  boardEl.appendChild(el);
+  CELLS.push(el);
+}
+
+function paint(opts){
+  const spawned = new Set(opts && opts.spawned || []);
+  const turned  = new Set(opts && opts.turned  || []);
+  for (let i = 0; i < N; i++){
+    const v = game.cells[i], el = CELLS[i];
+    let cls = "cell";
+    if (v === EMPTY){ cls += " empty"; el.textContent = ""; el.removeAttribute("aria-label"); }
+    else if (v === RUBBLE){ cls += " rubble"; el.textContent = "×"; el.setAttribute("aria-label", "rubble"); }
+    else { cls += " live f" + v; el.textContent = v; el.setAttribute("aria-label", "charge, fuse " + v); }
+    if (spawned.has(i)) cls += " spawned";
+    if (turned.has(i)) cls += " turned";
+    if (i === cursor) cls += " cursor";
+    el.className = cls;
+    el.style.removeProperty("--d");
+  }
+  scoreEl.textContent = game.score;
+  bestEl.textContent = best;
+  turnEl.textContent = game.turn;
+  rateEl.textContent = "×" + spawnRate(game.turn);
+  rangeEl.textContent = fuseLow(game.turn) + "–" + fuseHigh(game.turn);
+  roomEl.textContent = emptyCells(game).length;
+}
+
+function showPop(gained, multiplier){
+  const el = document.createElement("div");
+  el.className = "pop";
+  el.innerHTML = "+" + gained + (multiplier > 1
+    ? '<span class="mult">' + multiplier + " WAVES &times;" + (multiplier * multiplier) + "</span>"
+    : "");
+  stageEl.appendChild(el);
+  setTimeout(function(){ el.remove(); }, 900);
+}
+
+function buzz(ms){
+  try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {}
+}
+
+function tap(index){
+  if (busy || game.over || !(game.cells[index] > 0)) return;
+  busy = true;
+  cursor = index;
+
+  const snapshot = game.cells.slice();
+  const result = play(game, index);
+  const waveCount = result.waves.length;
+
+  // animate the blast off the pre-turn snapshot, then commit
+  result.waves.forEach(function(wave, w){
+    wave.forEach(function(i){
+      const el = CELLS[i], v = snapshot[i];
+      el.className = "cell live f" + v + " blast";
+      el.textContent = v;
+      el.style.setProperty("--d", (w * WAVE_MS) + "ms");
+    });
+  });
+
+  buzz(waveCount > 2 ? [8, 28, 16] : 8);
+  if (result.gained > 0) showPop(result.gained, waveCount);
+
+  const settle = waveCount * WAVE_MS + 300;
+  setTimeout(function(){
+    if (game.score > best){
+      best = game.score;
+      try { localStorage.setItem("fuse.best", String(best)); } catch (e) {}
+    }
+    paint(result);
+    if (game.over) showGameOver();
+    busy = false;
+  }, settle);
+}
+
+function showGameOver(){
+  buzz([26, 60, 26, 60, 90]);
+  stageEl.querySelectorAll(".pop").forEach(function(el){ el.remove(); });
+  overlay = document.createElement("div");
+  overlay.className = "over";
+  overlay.innerHTML =
+    '<div class="dead">No room for the next charges</div>' +
+    '<div class="final">' + game.score + "</div>" +
+    '<div class="stats">SURVIVED <b>' + (game.turn - 1) + '</b> TURNS<br>' +
+    'DEEPEST CHAIN <b>' + game.bestChain + '</b> WAVES<br>' +
+    'BEST <b>' + best + "</b></div>" +
+    '<div class="again">TAP TO RUN IT AGAIN</div>';
+  overlay.addEventListener("click", restart);
+  stageEl.appendChild(overlay);
+}
+
+function restart(){
+  if (overlay){ overlay.remove(); overlay = null; }
+  game = newGame((Math.random() * 0xFFFFFFFF) >>> 0);
+  cursor = 12;
+  busy = false;
+  paint({ spawned: [] });
+}
+
+boardEl.addEventListener("click", function(e){
+  const cell = e.target.closest(".cell");
+  if (cell) tap(parseInt(cell.dataset.i, 10));
+});
+
+/* desktop: arrows move the cursor, space/enter detonates, R restarts */
+document.addEventListener("keydown", function(e){
+  if (game.over){
+    if (e.key === " " || e.key === "Enter" || e.key.toLowerCase() === "r"){ e.preventDefault(); restart(); }
+    return;
+  }
+  const x = cursor % W, y = (cursor / W) | 0;
+  let moved = true;
+  switch (e.key){
+    case "ArrowLeft":  case "a": cursor = y * W + Math.max(0, x - 1); break;
+    case "ArrowRight": case "d": cursor = y * W + Math.min(W - 1, x + 1); break;
+    case "ArrowUp":    case "w": cursor = Math.max(0, y - 1) * W + x; break;
+    case "ArrowDown":  case "s": cursor = Math.min(H - 1, y + 1) * W + x; break;
+    case " ": case "Enter": e.preventDefault(); tap(cursor); return;
+    case "r": case "R": restart(); return;
+    default: moved = false;
+  }
+  if (moved){
+    e.preventDefault();
+    if (!busy) paint({ spawned: [] });
+  }
+});
+
+restart();
+</script>
+</body>
+</html>
